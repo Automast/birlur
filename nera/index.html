@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Narivexo • Danny Fernandez — Digital Marketer & Affiliate PPC</title>
+<meta name="description" content="Danny Fernandez — digital marketer specializing in affiliate marketing and PPC ads that scale. Funnels, tracking, CRO, and performance media — end to end." />
+<meta property="og:title" content="Narivexo • Danny Fernandez — Digital Marketer & Affiliate PPC" />
+<meta property="og:description" content="Digital marketer & affiliate specialist. PPC ads, funnels, tracking, CRO. 2+ years of building and scaling profitable campaigns." />
+<meta name="theme-color" content="#0f1224" />
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="%23a78bfa"/><stop offset="1" stop-color="%2314b8a6"/></linearGradient></defs><path d="M10 50V14a4 4 0 014-4h0a4 4 0 013.3 1.7l19.8 28V14a4 4 0 014-4h0a4 4 0 014 4v36a4 4 0 01-4 4h0a4 4 0 01-3.3-1.7L27 24v26a4 4 0 01-4 4h0a4 4 0 01-4-4z" fill="url(%23g)"/></svg>' />
+<style>
+  :root{
+    --bg-0:#0b0d1d;
+    --bg-1:#0f1224;
+    --text:#e7e8ee;
+    --muted:#b2b6c8;
+    --line:#20243d;
+    --card:#11152c99;
+    --accent-1:#a78bfa; /* purple */
+    --accent-2:#22d3ee; /* cyan */
+    --accent-3:#14b8a6; /* teal */
+    --glow: 0 0 30px rgba(34,211,238,.25), 0 0 60px rgba(20,184,166,.2);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--text); background: radial-gradient(1200px 800px at 10% -10%, #1a1f46 0%, transparent 60%),
+              radial-gradient(900px 700px at 90% -20%, #10273a 0%, transparent 60%),
+              linear-gradient(180deg,var(--bg-0),var(--bg-1));
+    overflow-x:hidden;
+  }
+  .noise{position:fixed;inset:0;pointer-events:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity=".03"/></svg>');mix-blend-mode:overlay;z-index:1}
+  a{color:inherit;text-decoration:none}
+  .container{width:min(1200px,92vw);margin-inline:auto}
+  header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(11,13,29,.9),rgba(11,13,29,.5) 70%,transparent);backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 10px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:radial-gradient(120% 120% at 30% 30%, rgba(167,139,250,.22), rgba(20,184,166,.22) 60%, rgba(34,211,238,.12) 100%); box-shadow: var(--glow);}
+  .logo svg{width:28px;height:28px;display:block}
+  .brand h1{font-size:16px;letter-spacing:.6px;margin:0;color:#ffffffcc;font-weight:600}
+  nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+  nav a{padding:8px 12px;border-radius:10px;border:1px solid transparent}
+  nav a:hover{border-color:#2a2e52;background:#0f1536}
+  .cta{padding:10px 16px;border-radius:12px;border:1px solid #283054;background:linear-gradient(180deg,#1b2146,#131936);box-shadow:0 8px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04)}
+  .cta:hover{box-shadow: 0 0 0 2px rgba(34,211,238,.2), 0 10px 40px rgba(34,211,238,.2)}
+
+  /* Hero */
+  .hero{position:relative;padding:80px 0 40px;}
+  .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:38px;align-items:center}
+  .kicker{display:inline-flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid #25305c;border-radius:999px;background:#0e1433}
+  .pill-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--accent-1),var(--accent-3));box-shadow:var(--glow)}
+  h2.display{font-size: clamp(34px, 6vw, 60px);line-height:1.05;margin:16px 0 10px}
+  .sub{font-size: clamp(16px, 2vw, 20px);color:var(--muted);max-width:58ch}
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+  .btn{padding:12px 18px;border-radius:14px;border:1px solid #27305b;background:linear-gradient(180deg,#1a214a,#0f1637);cursor:pointer}
+  .btn.primary{border-color:#2dd4bf;background:linear-gradient(180deg,#1b3341,#0d1d22)}
+  .btn span{display:inline-flex;gap:10px;align-items:center}
+  .btn:hover{transform:translateY(-1px);box-shadow:var(--glow)}
+
+  .hero-card{border:1px solid #263058;background:linear-gradient(180deg,rgba(16,20,47,.6),rgba(10,13,30,.7));border-radius:20px;padding:18px;display:grid;gap:14px}
+  .stat{display:flex;align-items:center;gap:12px}
+  .stat svg{width:22px;height:22px}
+  .stat h3{margin:0;font-size:22px}
+  .stat p{margin:0;color:var(--muted);font-size:14px}
+
+  /* Sections */
+  section{padding:70px 0;border-top:1px solid var(--line)}
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+  .section-title h3{margin:0;font-size:24px;letter-spacing:.5px}
+  .grid{display:grid;gap:18px}
+  .services{grid-template-columns:repeat(3,1fr)}
+  .card{border:1px solid #263058;background:linear-gradient(180deg,rgba(18,23,54,.7),rgba(9,12,28,.7));border-radius:18px;padding:18px}
+  .card h4{margin:6px 0 8px;font-size:18px}
+  .card p{margin:0;color:var(--muted)}
+  .icon{width:28px;height:28px}
+  .process{grid-template-columns:repeat(4,1fr)}
+  .step{position:relative;padding-top:10px}
+  .badge{position:absolute;top:-12px;left:-12px;background:linear-gradient(135deg,var(--accent-1),var(--accent-3));color:#0b0d1d;font-weight:700;border-radius:999px;padding:4px 10px;font-size:12px}
+  .work{grid-template-columns:repeat(3,1fr)}
+  .work .card{overflow:hidden}
+  .work .thumb{height:140px;border-radius:12px;background:radial-gradient(120% 120% at 30% 30%, rgba(167,139,250,.25), rgba(34,211,238,.22) 60%, rgba(20,184,166,.18) 100%)}
+  .work .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:12px;border:1px solid #2a315b;border-radius:999px;padding:6px 10px;color:var(--muted)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .kpi{padding:16px;border-radius:16px;border:1px solid #27305a;background:linear-gradient(180deg,rgba(14,18,42,.7),rgba(9,12,29,.7));text-align:center}
+  .kpi h4{margin:0;font-size:28px}
+  .kpi p{margin:6px 0 0;color:var(--muted)}
+  .tools{display:flex;flex-wrap:wrap;gap:10px}
+  .tool{border:1px dashed #2a335e;border-radius:999px;padding:8px 12px;color:#cdd1e6;background:#0e1431}
+
+  /* Contact */
+  .contact{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:center}
+  .contact .panel{border:1px solid #27305a;border-radius:18px;background:linear-gradient(180deg,#12183b,#0c112c);padding:18px}
+  .copy-wrap{display:flex;gap:10px;align-items:center}
+  .copy-wrap code{background:#0a0f29;border:1px solid #24305a;padding:10px 12px;border-radius:10px}
+  .copy-wrap button{padding:10px 14px;border-radius:10px;border:1px solid #2dd4bf;background:linear-gradient(180deg,#17383c,#0a1f20);cursor:pointer}
+  .toast{position:fixed;bottom:16px;right:16px;padding:12px 14px;border-radius:12px;background:#0b1e2d;color:#d1fff7;border:1px solid #1f675f;transform:translateY(20px);opacity:0;transition:.3s ease;box-shadow:var(--glow);z-index:11}
+  .toast.show{transform:translateY(0);opacity:1}
+
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted)}
+
+  /* Scroll reveal */
+  .reveal{opacity:0;transform:translateY(16px);transition:transform .6s ease, opacity .6s ease}
+  .reveal.in{opacity:1;transform:translateY(0)}
+
+  /* Responsive */
+  @media (max-width: 980px){
+    .hero-grid{grid-template-columns:1fr}
+    .services{grid-template-columns:1fr 1fr}
+    .process{grid-template-columns:1fr 1fr}
+    .work{grid-template-columns:1fr 1fr}
+    .contact{grid-template-columns:1fr}
+    nav ul{display:none}
+  }
+  @media (max-width: 640px){
+    .services,.work{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    .logo svg .spin{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="noise" aria-hidden="true"></div>
+<header id="top">
+  <div class="container nav">
+    <a href="#top" class="brand">
+      <span class="logo" aria-label="Narivexo logo">
+        <!-- Icon-only SVG logo -->
+        <svg viewBox="0 0 64 64" role="img" aria-labelledby="logoTitle">
+          <title id="logoTitle">Narivexo</title>
+          <defs>
+            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#a78bfa"/>
+              <stop offset="50%" stop-color="#22d3ee"/>
+              <stop offset="100%" stop-color="#14b8a6"/>
+            </linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <!-- Stylized N with upward arrow -->
+          <path d="M12 50V16a4 4 0 014-4h0a4 4 0 013.2 1.7l19.8 28V16a4 4 0 014-4h0a4 4 0 014 4v34a4 4 0 01-4 4h0a4 4 0 01-3.2-1.7L27 24v26a4 4 0 01-4 4h0a4 4 0 01-4-4z" fill="url(#g1)" filter="url(#glow)"/>
+          <g class="spin" style="transform-origin:50% 50%;animation:spin 12s linear infinite;opacity:.9">
+            <path d="M42 10l6 6-6 6" fill="none" stroke="url(#g1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M48 16h-9" fill="none" stroke="url(#g1)" stroke-width="2.5" stroke-linecap="round"/>
+          </g>
+          <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        </svg>
+      </span>
+      <h1>NARIVEXO</h1>
+    </a>
+    <nav aria-label="Primary">
+      <ul>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#process">Process</a></li>
+        <li><a href="#work">Work</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <a class="cta" href="#contact">Hire Me</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero container">
+    <div class="hero-grid">
+      <div>
+        <span class="kicker reveal"><span class="pill-dot"></span> Danny Fernandez • Digital Marketer</span>
+        <h2 class="display reveal" style="transition-delay:.06s">Affiliate & PPC Specialist</h2>
+        <p class="sub reveal" style="transition-delay:.12s">I plan, launch, and scale profitable performance campaigns — from research and creative to funnels, tracking, and optimization. <strong>2+ years</strong> of hands-on results across e‑commerce, apps, and lead gen.</p>
+        <div class="actions reveal" style="transition-delay:.18s">
+          <a class="btn primary" href="#services"><span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18"/><path d="M12 3v18"/></svg>
+            Start here</span></a>
+          <a class="btn" href="#work"><span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v14H3z"/><path d="M3 10h18"/><path d="M9 21h6"/></svg>
+            Case snapshots</span></a>
+          <a class="btn" href="#contact"><span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10"/><path d="M3 7l8.5 6.5a2 2 0 0 0 2.9 0L23 7"/><path d="M21 7H3l9-4 9 4z"/></svg>
+            Get in touch</span></a>
+        </div>
+      </div>
+      <aside class="hero-card reveal" style="transition-delay:.12s">
+        <div class="stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 7-8"/><path d="M14 4h7v7"/></svg>
+          <div><h3>Performance‑first</h3><p>Media buying with clear KPIs, creative testing, and ruthless iteration.</p></div>
+        </div>
+        <div class="stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5l6 4 6-4v14l-6-4-6 4z"/></svg>
+          <div><h3>Affiliate growth</h3><p>End‑to‑end campaign setup, tracking, and ROAS‑driven scaling.</p></div>
+        </div>
+        <div class="stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>
+          <div><h3>Fast execution</h3><p>Lean processes to launch quickly and learn faster.</p></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="services" class="container">
+    <div class="section-title">
+      <h3>Services</h3>
+      <span class="tag">Built for speed & scale</span>
+    </div>
+    <div class="grid services">
+      <div class="card reveal">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l7-4 7 4v6l-7 4-7-4z"/><path d="M5 9l7 4 7-4"/></svg>
+        <h4>PPC Campaigns</h4>
+        <p>Google, Meta & TikTok ads — structure, creative, audiences, and daily optimization for ROAS.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:.05s">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18"/><path d="M6 17V7"/><path d="M10 17V4"/><path d="M14 17v-6"/><path d="M18 17v-2"/></svg>
+        <h4>Analytics & Tracking</h4>
+        <p>GA4, GTM, pixels, conversions — clean data for confident decisions.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:.1s">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18"/><path d="M6 7l12 10"/><path d="M6 17h12"/></svg>
+        <h4>Funnels & CRO</h4>
+        <p>Landing pages, lead flows, and A/B tests to unlock conversion lift.</p>
+      </div>
+      <div class="card reveal">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h9"/><path d="M13 5l7 7-7 7"/></svg>
+        <h4>Affiliate Setup</h4>
+        <p>Offer selection, tracking links, creatives, and scaling playbooks.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:.05s">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v4H3z"/><path d="M7 9v10"/><path d="M17 9v10"/><path d="M3 19h18"/></svg>
+        <h4>Creative Ops</h4>
+        <p>Briefs, hooks, and ad variations that learn fast and waste less.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:.1s">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg>
+        <h4>Growth Sprints</h4>
+        <p>Focused 2‑week cycles to ship improvements and measure impact.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="process" class="container">
+    <div class="section-title">
+      <h3>Process</h3>
+      <span class="tag">Simple. Transparent. Iterative.</span>
+    </div>
+    <div class="grid process">
+      <div class="card step reveal">
+        <span class="badge">01</span>
+        <h4>Research</h4>
+        <p>Market, competitors, ICP, and offer — build a sharp hypothesis.</p>
+      </div>
+      <div class="card step reveal" style="transition-delay:.04s">
+        <span class="badge">02</span>
+        <h4>Launch</h4>
+        <p>Ship MVP campaigns fast with tracking + guardrails.</p>
+      </div>
+      <div class="card step reveal" style="transition-delay:.08s">
+        <span class="badge">03</span>
+        <h4>Learn</h4>
+        <p>Daily reads on creative, audiences, bids, and funnel friction.</p>
+      </div>
+      <div class="card step reveal" style="transition-delay:.12s">
+        <span class="badge">04</span>
+        <h4>Scale</h4>
+        <p>Double‑down where signal is strong; cut waste ruthlessly.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="section-title">
+      <h3>Selected Results</h3>
+      <span class="tag">Snapshot metrics</span>
+    </div>
+    <div class="stats">
+      <div class="kpi reveal"><h4><span data-count="3.6">0</span>x</h4><p>E‑com ROAS (apparel)</p></div>
+      <div class="kpi reveal"><h4><span data-count="-42">0</span>%</h4><p>CPA reduction (lead gen)</p></div>
+      <div class="kpi reveal"><h4><span data-count="+120">0</span>%</h4><p>Signup lift (mobile app)</p></div>
+      <div class="kpi reveal"><h4><span data-count="8">0</span>wk</h4><p>From 0 → scale</p></div>
+    </div>
+  </section>
+
+  <section id="work" class="container">
+    <div class="section-title">
+      <h3>Case Snapshots</h3>
+      <span class="tag">Anonymized, real scenarios</span>
+    </div>
+    <div class="grid work">
+      <article class="card reveal">
+        <div class="thumb"></div>
+        <h4>DTC Apparel — Prospecting</h4>
+        <p>Creative system with hooks + UGC concepts, consolidated structure, and hourly pacing.</p>
+        <div class="meta"><span class="tag">ROAS 3.6x</span><span class="tag">-28% CPA</span><span class="tag">Meta + TikTok</span></div>
+      </article>
+      <article class="card reveal" style="transition-delay:.06s">
+        <div class="thumb"></div>
+        <h4>Mobile App — Onboarding</h4>
+        <p>Search + video combo with funnel fixes and email nudge. Cohort tracking via GA4.</p>
+        <div class="meta"><span class="tag">+120% signups</span><span class="tag">Google Ads</span><span class="tag">CRO</span></div>
+      </article>
+      <article class="card reveal" style="transition-delay:.12s">
+        <div class="thumb"></div>
+        <h4>Lead Gen — B2B SaaS</h4>
+        <p>Offer repositioning + landing simplification, audience layering, and exact‑match guardrails.</p>
+        <div class="meta"><span class="tag">-42% CPA</span><span class="tag">Search</span><span class="tag">Funnels</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="section-title">
+      <h3>Tools I Work With</h3>
+      <span class="tag">No bloat, only signal</span>
+    </div>
+    <div class="tools reveal">
+      <span class="tool">Google Ads</span>
+      <span class="tool">Meta Ads</span>
+      <span class="tool">TikTok Ads</span>
+      <span class="tool">GA4</span>
+      <span class="tool">GTM</span>
+      <span class="tool">Looker Studio</span>
+      <span class="tool">Klaviyo</span>
+      <span class="tool">Hotjar</span>
+    </div>
+  </section>
+
+  <section id="contact" class="container">
+    <div class="section-title">
+      <h3>Let’s Build Something Profitable</h3>
+      <span class="tag">Based in • Available remote</span>
+    </div>
+    <div class="contact">
+      <div class="panel reveal">
+        <h4>Project Fit</h4>
+        <p class="sub">Best fit for performance‑minded founders/teams who want clarity, speed, and measurable impact.</p>
+        <ul>
+          <li>Clear target market and offer</li>
+          <li>Willing to test creative & funnels</li>
+          <li>Comfortable iterating weekly</li>
+        </ul>
+      </div>
+      <div class="panel reveal" style="transition-delay:.06s">
+        <h4>Get in touch</h4>
+        <p>Tap to copy my email and open your mail app:</p>
+        <div class="copy-wrap">
+          <code id="email">danny@narivexo.com</code>
+          <button id="copyBtn" aria-label="Copy email">Copy & Compose</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><use href="#"/></svg>
+      </span>
+      <span>© <span id="year"></span> Narivexo • Danny Fernandez</span>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="tag" href="#services">Services</a>
+      <a class="tag" href="#work">Work</a>
+      <a class="tag" href="#contact">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{const id=a.getAttribute('href');const el=document.querySelector(id);if(el){e.preventDefault();el.scrollIntoView({behavior:'smooth',block:'start'});}});
+  });
+
+  // Scroll reveal
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach((entry)=>{ if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target);} });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // KPI counting animation
+  const countEls = document.querySelectorAll('[data-count]');
+  const countIO = new IntersectionObserver((entries)=>{
+    entries.forEach(({isIntersecting,target})=>{
+      if(!isIntersecting) return; countIO.unobserve(target);
+      const to = target.getAttribute('data-count');
+      const isFloat = String(to).includes('.') || String(to).includes('x');
+      const isSigned = /^[-+]/.test(String(to));
+      const num = parseFloat(String(to).replace(/[x%]/g,''));
+      const suffix = (String(to).match(/[x%]/)||[''])[0];
+      const start = 0; const duration = 1200; const startTs = performance.now();
+      const animate = (t)=>{
+        const p = Math.min(1,(t-startTs)/duration);
+        const val = start + (num - start) * (1 - Math.cos(Math.PI*p))/2;
+        target.textContent = (isFloat? val.toFixed(1): Math.round(val)) * (isSigned? (String(to).startsWith('-')?-1:1):1);
+        requestAnimationFrame((n)=>{ if(p<1) animate(n); else target.textContent = String(to).replace(/[+]/,'');});
+      };
+      requestAnimationFrame(animate);
+    })
+  }, {threshold:.5});
+  countEls.forEach(el=>countIO.observe(el));
+
+  // Copy email + open mail client
+  const emailEl = document.getElementById('email');
+  const btn = document.getElementById('copyBtn');
+  btn?.addEventListener('click', async ()=>{
+    const email = emailEl.textContent.trim();
+    try{ await navigator.clipboard.writeText(email); toast('Email copied: '+email); window.location.href = 'mailto:'+email+'?subject='+encodeURIComponent('Project Inquiry — Narivexo')+'&body='+encodeURIComponent('Hi Danny,\n\nI\'d like to discuss a project…'); }
+    catch(e){ toast('Copy failed — email: '+email); }
+  });
+
+  // Year
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Toast helper
+  function toast(msg){
+    let t = document.querySelector('.toast');
+    if(!t){ t = document.createElement('div'); t.className='toast'; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+</script>
+
+<!--
+Notes:
+- This is a single-file site (no external CSS/JS). Icons are inline SVG for a modern look without dependencies.
+- Logo is an animated, icon-only mark.
+- Replace case metrics with your own if desired; current values are anonymized snapshots.
+-->
+</body>
+</html>
