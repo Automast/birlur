@@ -1,39 +1,190 @@
 <?php
 // Exchange Rate Checker - Comprehensive Traveler Tools
-// Uses multiple free exchange rate APIs for reliability
-// Free APIs with various endpoints for different functionalities
+// Uses multiple FREE APIs without API keys required
+// Primary: fawazahmed0/currency-api (200+ currencies, no limits)
+// Backup: exchangerate.host, open.er-api.com
 
 header('Content-Type: text/html; charset=UTF-8');
 
-// Configuration - Multiple free APIs with no API key required
-$primary_api = 'https://api.exchangerate.host';
-$backup_api = 'https://api.frankfurter.app';
-$currencies_api = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1';
-$open_access_api = 'https://open.er-api.com/v6';
-$cache_duration = 3600; // Cache for 1 hour to respect rate limits
+// Configuration - All FREE APIs, no API keys required
+$currency_apis = [
+    'primary' => 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1',
+    'backup1' => 'https://api.exchangerate.host',
+    'backup2' => 'https://open.er-api.com/v6'
+];
 
-// Popular travel currencies and their details
-$popular_currencies = [
-    'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'flag' => '🇺🇸'],
-    'EUR' => ['name' => 'Euro', 'symbol' => '€', 'flag' => '🇪🇺'],
-    'GBP' => ['name' => 'British Pound', 'symbol' => '£', 'flag' => '🇬🇧'],
-    'JPY' => ['name' => 'Japanese Yen', 'symbol' => '¥', 'flag' => '🇯🇵'],
+$cache_duration = 3600; // Cache for 1 hour
+
+// Comprehensive fallback currency list (ISO 4217 codes)
+$all_currencies = [
+    'AED' => ['name' => 'United Arab Emirates Dirham', 'symbol' => 'د.إ', 'flag' => '🇦🇪'],
+    'AFN' => ['name' => 'Afghan Afghani', 'symbol' => '؋', 'flag' => '🇦🇫'],
+    'ALL' => ['name' => 'Albanian Lek', 'symbol' => 'L', 'flag' => '🇦🇱'],
+    'AMD' => ['name' => 'Armenian Dram', 'symbol' => '֏', 'flag' => '🇦🇲'],
+    'ANG' => ['name' => 'Netherlands Antillean Guilder', 'symbol' => 'ƒ', 'flag' => '🇳🇱'],
+    'AOA' => ['name' => 'Angolan Kwanza', 'symbol' => 'Kz', 'flag' => '🇦🇴'],
+    'ARS' => ['name' => 'Argentine Peso', 'symbol' => '$', 'flag' => '🇦🇷'],
     'AUD' => ['name' => 'Australian Dollar', 'symbol' => 'A$', 'flag' => '🇦🇺'],
-    'CAD' => ['name' => 'Canadian Dollar', 'symbol' => 'C$', 'flag' => '🇨🇦'],
-    'CHF' => ['name' => 'Swiss Franc', 'symbol' => 'CHF', 'flag' => '🇨🇭'],
-    'CNY' => ['name' => 'Chinese Yuan', 'symbol' => '¥', 'flag' => '🇨🇳'],
-    'SEK' => ['name' => 'Swedish Krona', 'symbol' => 'kr', 'flag' => '🇸🇪'],
-    'NOK' => ['name' => 'Norwegian Krone', 'symbol' => 'kr', 'flag' => '🇳🇴'],
-    'DKK' => ['name' => 'Danish Krone', 'symbol' => 'kr', 'flag' => '🇩🇰'],
-    'NZD' => ['name' => 'New Zealand Dollar', 'symbol' => 'NZ$', 'flag' => '🇳🇿'],
-    'SGD' => ['name' => 'Singapore Dollar', 'symbol' => 'S$', 'flag' => '🇸🇬'],
-    'HKD' => ['name' => 'Hong Kong Dollar', 'symbol' => 'HK$', 'flag' => '🇭🇰'],
-    'MXN' => ['name' => 'Mexican Peso', 'symbol' => '$', 'flag' => '🇲🇽'],
-    'INR' => ['name' => 'Indian Rupee', 'symbol' => '₹', 'flag' => '🇮🇳'],
+    'AWG' => ['name' => 'Aruban Florin', 'symbol' => 'ƒ', 'flag' => '🇦🇼'],
+    'AZN' => ['name' => 'Azerbaijani Manat', 'symbol' => '₼', 'flag' => '🇦🇿'],
+    'BAM' => ['name' => 'Bosnia-Herzegovina Convertible Mark', 'symbol' => 'KM', 'flag' => '🇧🇦'],
+    'BBD' => ['name' => 'Barbadian Dollar', 'symbol' => '$', 'flag' => '🇧🇧'],
+    'BDT' => ['name' => 'Bangladeshi Taka', 'symbol' => '৳', 'flag' => '🇧🇩'],
+    'BGN' => ['name' => 'Bulgarian Lev', 'symbol' => 'лв', 'flag' => '🇧🇬'],
+    'BHD' => ['name' => 'Bahraini Dinar', 'symbol' => 'ب.د', 'flag' => '🇧🇭'],
+    'BIF' => ['name' => 'Burundian Franc', 'symbol' => 'Fr', 'flag' => '🇧🇮'],
+    'BMD' => ['name' => 'Bermudan Dollar', 'symbol' => '$', 'flag' => '🇧🇲'],
+    'BND' => ['name' => 'Brunei Dollar', 'symbol' => '$', 'flag' => '🇧🇳'],
+    'BOB' => ['name' => 'Bolivian Boliviano', 'symbol' => 'Bs.', 'flag' => '🇧🇴'],
     'BRL' => ['name' => 'Brazilian Real', 'symbol' => 'R$', 'flag' => '🇧🇷'],
-    'ZAR' => ['name' => 'South African Rand', 'symbol' => 'R', 'flag' => '🇿🇦'],
+    'BSD' => ['name' => 'Bahamian Dollar', 'symbol' => '$', 'flag' => '🇧🇸'],
+    'BTC' => ['name' => 'Bitcoin', 'symbol' => '₿', 'flag' => '🟡'],
+    'BTN' => ['name' => 'Bhutanese Ngultrum', 'symbol' => 'Nu.', 'flag' => '🇧🇹'],
+    'BWP' => ['name' => 'Botswanan Pula', 'symbol' => 'P', 'flag' => '🇧🇼'],
+    'BYN' => ['name' => 'Belarusian Ruble', 'symbol' => 'Br', 'flag' => '🇧🇾'],
+    'BZD' => ['name' => 'Belize Dollar', 'symbol' => 'BZ$', 'flag' => '🇧🇿'],
+    'CAD' => ['name' => 'Canadian Dollar', 'symbol' => 'C$', 'flag' => '🇨🇦'],
+    'CDF' => ['name' => 'Congolese Franc', 'symbol' => 'Fr', 'flag' => '🇨🇩'],
+    'CHF' => ['name' => 'Swiss Franc', 'symbol' => 'CHF', 'flag' => '🇨🇭'],
+    'CLP' => ['name' => 'Chilean Peso', 'symbol' => '$', 'flag' => '🇨🇱'],
+    'CNY' => ['name' => 'Chinese Yuan', 'symbol' => '¥', 'flag' => '🇨🇳'],
+    'COP' => ['name' => 'Colombian Peso', 'symbol' => '$', 'flag' => '🇨🇴'],
+    'CRC' => ['name' => 'Costa Rican Colón', 'symbol' => '₡', 'flag' => '🇨🇷'],
+    'CUC' => ['name' => 'Cuban Convertible Peso', 'symbol' => '$', 'flag' => '🇨🇺'],
+    'CUP' => ['name' => 'Cuban Peso', 'symbol' => '$', 'flag' => '🇨🇺'],
+    'CVE' => ['name' => 'Cape Verdean Escudo', 'symbol' => '$', 'flag' => '🇨🇻'],
+    'CZK' => ['name' => 'Czech Koruna', 'symbol' => 'Kč', 'flag' => '🇨🇿'],
+    'DJF' => ['name' => 'Djiboutian Franc', 'symbol' => 'Fr', 'flag' => '🇩🇯'],
+    'DKK' => ['name' => 'Danish Krone', 'symbol' => 'kr', 'flag' => '🇩🇰'],
+    'DOP' => ['name' => 'Dominican Peso', 'symbol' => 'RD$', 'flag' => '🇩🇴'],
+    'DZD' => ['name' => 'Algerian Dinar', 'symbol' => 'د.ج', 'flag' => '🇩🇿'],
+    'EGP' => ['name' => 'Egyptian Pound', 'symbol' => '£', 'flag' => '🇪🇬'],
+    'ERN' => ['name' => 'Eritrean Nakfa', 'symbol' => 'Nfk', 'flag' => '🇪🇷'],
+    'ETB' => ['name' => 'Ethiopian Birr', 'symbol' => 'Br', 'flag' => '🇪🇹'],
+    'EUR' => ['name' => 'Euro', 'symbol' => '€', 'flag' => '🇪🇺'],
+    'FJD' => ['name' => 'Fijian Dollar', 'symbol' => '$', 'flag' => '🇫🇯'],
+    'FKP' => ['name' => 'Falkland Islands Pound', 'symbol' => '£', 'flag' => '🇫🇰'],
+    'GBP' => ['name' => 'British Pound Sterling', 'symbol' => '£', 'flag' => '🇬🇧'],
+    'GEL' => ['name' => 'Georgian Lari', 'symbol' => '₾', 'flag' => '🇬🇪'],
+    'GGP' => ['name' => 'Guernsey Pound', 'symbol' => '£', 'flag' => '🇬🇬'],
+    'GHS' => ['name' => 'Ghanaian Cedi', 'symbol' => '₵', 'flag' => '🇬🇭'],
+    'GIP' => ['name' => 'Gibraltar Pound', 'symbol' => '£', 'flag' => '🇬🇮'],
+    'GMD' => ['name' => 'Gambian Dalasi', 'symbol' => 'D', 'flag' => '🇬🇲'],
+    'GNF' => ['name' => 'Guinean Franc', 'symbol' => 'Fr', 'flag' => '🇬🇳'],
+    'GTQ' => ['name' => 'Guatemalan Quetzal', 'symbol' => 'Q', 'flag' => '🇬🇹'],
+    'GYD' => ['name' => 'Guyanaese Dollar', 'symbol' => '$', 'flag' => '🇬🇾'],
+    'HKD' => ['name' => 'Hong Kong Dollar', 'symbol' => 'HK$', 'flag' => '🇭🇰'],
+    'HNL' => ['name' => 'Honduran Lempira', 'symbol' => 'L', 'flag' => '🇭🇳'],
+    'HRK' => ['name' => 'Croatian Kuna', 'symbol' => 'kn', 'flag' => '🇭🇷'],
+    'HTG' => ['name' => 'Haitian Gourde', 'symbol' => 'G', 'flag' => '🇭🇹'],
+    'HUF' => ['name' => 'Hungarian Forint', 'symbol' => 'Ft', 'flag' => '🇭🇺'],
+    'IDR' => ['name' => 'Indonesian Rupiah', 'symbol' => 'Rp', 'flag' => '🇮🇩'],
+    'ILS' => ['name' => 'Israeli New Sheqel', 'symbol' => '₪', 'flag' => '🇮🇱'],
+    'IMP' => ['name' => 'Manx pound', 'symbol' => '£', 'flag' => '🇮🇲'],
+    'INR' => ['name' => 'Indian Rupee', 'symbol' => '₹', 'flag' => '🇮🇳'],
+    'IQD' => ['name' => 'Iraqi Dinar', 'symbol' => 'ع.د', 'flag' => '🇮🇶'],
+    'IRR' => ['name' => 'Iranian Rial', 'symbol' => '﷼', 'flag' => '🇮🇷'],
+    'ISK' => ['name' => 'Icelandic Króna', 'symbol' => 'kr', 'flag' => '🇮🇸'],
+    'JEP' => ['name' => 'Jersey Pound', 'symbol' => '£', 'flag' => '🇯🇪'],
+    'JMD' => ['name' => 'Jamaican Dollar', 'symbol' => 'J$', 'flag' => '🇯🇲'],
+    'JOD' => ['name' => 'Jordanian Dinar', 'symbol' => 'د.ا', 'flag' => '🇯🇴'],
+    'JPY' => ['name' => 'Japanese Yen', 'symbol' => '¥', 'flag' => '🇯🇵'],
+    'KES' => ['name' => 'Kenyan Shilling', 'symbol' => 'Sh', 'flag' => '🇰🇪'],
+    'KGS' => ['name' => 'Kyrgystani Som', 'symbol' => 'с', 'flag' => '🇰🇬'],
+    'KHR' => ['name' => 'Cambodian Riel', 'symbol' => '៛', 'flag' => '🇰🇭'],
+    'KMF' => ['name' => 'Comorian Franc', 'symbol' => 'Fr', 'flag' => '🇰🇲'],
+    'KPW' => ['name' => 'North Korean Won', 'symbol' => '₩', 'flag' => '🇰🇵'],
+    'KRW' => ['name' => 'South Korean Won', 'symbol' => '₩', 'flag' => '🇰🇷'],
+    'KWD' => ['name' => 'Kuwaiti Dinar', 'symbol' => 'د.ك', 'flag' => '🇰🇼'],
+    'KYD' => ['name' => 'Cayman Islands Dollar', 'symbol' => '$', 'flag' => '🇰🇾'],
+    'KZT' => ['name' => 'Kazakhstani Tenge', 'symbol' => '₸', 'flag' => '🇰🇿'],
+    'LAK' => ['name' => 'Laotian Kip', 'symbol' => '₭', 'flag' => '🇱🇦'],
+    'LBP' => ['name' => 'Lebanese Pound', 'symbol' => 'ل.ل', 'flag' => '🇱🇧'],
+    'LKR' => ['name' => 'Sri Lankan Rupee', 'symbol' => 'Rs', 'flag' => '🇱🇰'],
+    'LRD' => ['name' => 'Liberian Dollar', 'symbol' => '$', 'flag' => '🇱🇷'],
+    'LSL' => ['name' => 'Lesotho Loti', 'symbol' => 'L', 'flag' => '🇱🇸'],
+    'LYD' => ['name' => 'Libyan Dinar', 'symbol' => 'ل.د', 'flag' => '🇱🇾'],
+    'MAD' => ['name' => 'Moroccan Dirham', 'symbol' => 'د.م.', 'flag' => '🇲🇦'],
+    'MDL' => ['name' => 'Moldovan Leu', 'symbol' => 'L', 'flag' => '🇲🇩'],
+    'MGA' => ['name' => 'Malagasy Ariary', 'symbol' => 'Ar', 'flag' => '🇲🇬'],
+    'MKD' => ['name' => 'Macedonian Denar', 'symbol' => 'ден', 'flag' => '🇲🇰'],
+    'MMK' => ['name' => 'Myanma Kyat', 'symbol' => 'Ks', 'flag' => '🇲🇲'],
+    'MNT' => ['name' => 'Mongolian Tugrik', 'symbol' => '₮', 'flag' => '🇲🇳'],
+    'MOP' => ['name' => 'Macanese Pataca', 'symbol' => 'P', 'flag' => '🇲🇴'],
+    'MRU' => ['name' => 'Mauritanian Ouguiya', 'symbol' => 'UM', 'flag' => '🇲🇷'],
+    'MUR' => ['name' => 'Mauritian Rupee', 'symbol' => '₨', 'flag' => '🇲🇺'],
+    'MVR' => ['name' => 'Maldivian Rufiyaa', 'symbol' => '.ރ', 'flag' => '🇲🇻'],
+    'MWK' => ['name' => 'Malawian Kwacha', 'symbol' => 'MK', 'flag' => '🇲🇼'],
+    'MXN' => ['name' => 'Mexican Peso', 'symbol' => '$', 'flag' => '🇲🇽'],
+    'MYR' => ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'flag' => '🇲🇾'],
+    'MZN' => ['name' => 'Mozambican Metical', 'symbol' => 'MT', 'flag' => '🇲🇿'],
+    'NAD' => ['name' => 'Namibian Dollar', 'symbol' => '$', 'flag' => '🇳🇦'],
+    'NGN' => ['name' => 'Nigerian Naira', 'symbol' => '₦', 'flag' => '🇳🇬'],
+    'NIO' => ['name' => 'Nicaraguan Córdoba', 'symbol' => 'C$', 'flag' => '🇳🇮'],
+    'NOK' => ['name' => 'Norwegian Krone', 'symbol' => 'kr', 'flag' => '🇳🇴'],
+    'NPR' => ['name' => 'Nepalese Rupee', 'symbol' => '₨', 'flag' => '🇳🇵'],
+    'NZD' => ['name' => 'New Zealand Dollar', 'symbol' => 'NZ$', 'flag' => '🇳🇿'],
+    'OMR' => ['name' => 'Omani Rial', 'symbol' => 'ر.ع.', 'flag' => '🇴🇲'],
+    'PAB' => ['name' => 'Panamanian Balboa', 'symbol' => 'B/.', 'flag' => '🇵🇦'],
+    'PEN' => ['name' => 'Peruvian Nuevo Sol', 'symbol' => 'S/.', 'flag' => '🇵🇪'],
+    'PGK' => ['name' => 'Papua New Guinean Kina', 'symbol' => 'K', 'flag' => '🇵🇬'],
+    'PHP' => ['name' => 'Philippine Peso', 'symbol' => '₱', 'flag' => '🇵🇭'],
+    'PKR' => ['name' => 'Pakistani Rupee', 'symbol' => '₨', 'flag' => '🇵🇰'],
+    'PLN' => ['name' => 'Polish Zloty', 'symbol' => 'zł', 'flag' => '🇵🇱'],
+    'PYG' => ['name' => 'Paraguayan Guarani', 'symbol' => '₲', 'flag' => '🇵🇾'],
+    'QAR' => ['name' => 'Qatari Rial', 'symbol' => 'ر.ق', 'flag' => '🇶🇦'],
+    'RON' => ['name' => 'Romanian Leu', 'symbol' => 'lei', 'flag' => '🇷🇴'],
+    'RSD' => ['name' => 'Serbian Dinar', 'symbol' => 'дин.', 'flag' => '🇷🇸'],
+    'RUB' => ['name' => 'Russian Ruble', 'symbol' => '₽', 'flag' => '🇷🇺'],
+    'RWF' => ['name' => 'Rwandan Franc', 'symbol' => 'Fr', 'flag' => '🇷🇼'],
+    'SAR' => ['name' => 'Saudi Riyal', 'symbol' => 'ر.س', 'flag' => '🇸🇦'],
+    'SBD' => ['name' => 'Solomon Islands Dollar', 'symbol' => '$', 'flag' => '🇸🇧'],
+    'SCR' => ['name' => 'Seychellois Rupee', 'symbol' => '₨', 'flag' => '🇸🇨'],
+    'SDG' => ['name' => 'Sudanese Pound', 'symbol' => 'ج.س.', 'flag' => '🇸🇩'],
+    'SEK' => ['name' => 'Swedish Krona', 'symbol' => 'kr', 'flag' => '🇸🇪'],
+    'SGD' => ['name' => 'Singapore Dollar', 'symbol' => 'S$', 'flag' => '🇸🇬'],
+    'SHP' => ['name' => 'Saint Helena Pound', 'symbol' => '£', 'flag' => '🇸🇭'],
+    'SLE' => ['name' => 'Sierra Leonean Leone', 'symbol' => 'Le', 'flag' => '🇸🇱'],
+    'SOS' => ['name' => 'Somali Shilling', 'symbol' => 'Sh', 'flag' => '🇸🇴'],
+    'SRD' => ['name' => 'Surinamese Dollar', 'symbol' => '$', 'flag' => '🇸🇷'],
+    'STD' => ['name' => 'São Tomé and Príncipe Dobra', 'symbol' => 'Db', 'flag' => '🇸🇹'],
+    'SVC' => ['name' => 'Salvadoran Colón', 'symbol' => '₡', 'flag' => '🇸🇻'],
+    'SYP' => ['name' => 'Syrian Pound', 'symbol' => '£S', 'flag' => '🇸🇾'],
+    'SZL' => ['name' => 'Swazi Lilangeni', 'symbol' => 'L', 'flag' => '🇸🇿'],
     'THB' => ['name' => 'Thai Baht', 'symbol' => '฿', 'flag' => '🇹🇭'],
-    'KRW' => ['name' => 'South Korean Won', 'symbol' => '₩', 'flag' => '🇰🇷']
+    'TJS' => ['name' => 'Tajikistani Somoni', 'symbol' => 'ЅМ', 'flag' => '🇹🇯'],
+    'TMT' => ['name' => 'Turkmenistani Manat', 'symbol' => 'm', 'flag' => '🇹🇲'],
+    'TND' => ['name' => 'Tunisian Dinar', 'symbol' => 'د.ت', 'flag' => '🇹🇳'],
+    'TOP' => ['name' => 'Tongan Paʻanga', 'symbol' => 'T$', 'flag' => '🇹🇴'],
+    'TRY' => ['name' => 'Turkish Lira', 'symbol' => '₺', 'flag' => '🇹🇷'],
+    'TTD' => ['name' => 'Trinidad and Tobago Dollar', 'symbol' => 'TT$', 'flag' => '🇹🇹'],
+    'TVD' => ['name' => 'Tuvaluan Dollar', 'symbol' => '$', 'flag' => '🇹🇻'],
+    'TWD' => ['name' => 'New Taiwan Dollar', 'symbol' => 'NT$', 'flag' => '🇹🇼'],
+    'TZS' => ['name' => 'Tanzanian Shilling', 'symbol' => 'Sh', 'flag' => '🇹🇿'],
+    'UAH' => ['name' => 'Ukrainian Hryvnia', 'symbol' => '₴', 'flag' => '🇺🇦'],
+    'UGX' => ['name' => 'Ugandan Shilling', 'symbol' => 'Sh', 'flag' => '🇺🇬'],
+    'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'flag' => '🇺🇸'],
+    'UYU' => ['name' => 'Uruguayan Peso', 'symbol' => '$U', 'flag' => '🇺🇾'],
+    'UYW' => ['name' => 'Unidad Previsional', 'symbol' => 'UP', 'flag' => '🇺🇾'],
+    'UZS' => ['name' => 'Uzbekistan Som', 'symbol' => 'som', 'flag' => '🇺🇿'],
+    'VED' => ['name' => 'Venezuelan Bolívar Digital', 'symbol' => 'Bs.D.', 'flag' => '🇻🇪'],
+    'VES' => ['name' => 'Venezuelan Bolívar Soberano', 'symbol' => 'Bs.S.', 'flag' => '🇻🇪'],
+    'VND' => ['name' => 'Vietnamese Dong', 'symbol' => '₫', 'flag' => '🇻🇳'],
+    'VUV' => ['name' => 'Vanuatu Vatu', 'symbol' => 'Vt', 'flag' => '🇻🇺'],
+    'WST' => ['name' => 'Samoan Tala', 'symbol' => 'T', 'flag' => '🇼🇸'],
+    'XAF' => ['name' => 'CFA Franc BEAC', 'symbol' => 'Fr', 'flag' => '🌍'],
+    'XAG' => ['name' => 'Silver Ounce', 'symbol' => 'oz', 'flag' => '🥈'],
+    'XAU' => ['name' => 'Gold Ounce', 'symbol' => 'oz', 'flag' => '🥇'],
+    'XCD' => ['name' => 'East Caribbean Dollar', 'symbol' => '$', 'flag' => '🏝️'],
+    'XDR' => ['name' => 'Special Drawing Rights', 'symbol' => 'SDR', 'flag' => '🏦'],
+    'XOF' => ['name' => 'CFA Franc BCEAO', 'symbol' => 'Fr', 'flag' => '🌍'],
+    'XPD' => ['name' => 'Palladium Ounce', 'symbol' => 'oz', 'flag' => '⚪'],
+    'XPF' => ['name' => 'CFP Franc', 'symbol' => 'Fr', 'flag' => '🇫🇷'],
+    'XPT' => ['name' => 'Platinum Ounce', 'symbol' => 'oz', 'flag' => '🔘'],
+    'YER' => ['name' => 'Yemeni Rial', 'symbol' => '﷼', 'flag' => '🇾🇪'],
+    'ZAR' => ['name' => 'South African Rand', 'symbol' => 'R', 'flag' => '🇿🇦'],
+    'ZMW' => ['name' => 'Zambian Kwacha', 'symbol' => 'ZK', 'flag' => '🇿🇲'],
+    'ZWL' => ['name' => 'Zimbabwean Dollar', 'symbol' => '$', 'flag' => '🇿🇼']
 ];
 
 // Common tipping customs by country
@@ -47,268 +198,74 @@ $tipping_guide = [
     'IT' => ['percent' => 10, 'description' => 'Round up or 10% for good service'],
     'ES' => ['percent' => 10, 'description' => 'Small tips appreciated, 5-10% for restaurants'],
     'CA' => ['percent' => 15, 'description' => '15-20% standard, similar to US'],
-    'MX' => ['percent' => 15, 'description' => '10-15% for restaurants, round up for services']
+    'MX' => ['percent' => 15, 'description' => '10-15% for restaurants, round up for services'],
+    'TH' => ['percent' => 5, 'description' => '5-10% for restaurants, round up for services'],
+    'SG' => ['percent' => 0, 'description' => 'Service charge often included, small tips appreciated'],
+    'IN' => ['percent' => 10, 'description' => '10% for restaurants, round up for taxis'],
+    'BR' => ['percent' => 10, 'description' => '10% service charge usually included'],
+    'ZA' => ['percent' => 15, 'description' => '10-15% for restaurants and services']
 ];
 
-// Helper function to make API calls with caching and multiple fallbacks
+// Helper function to make API calls with multiple fallbacks
 function fetchExchangeData($endpoint, $params = [], $api_type = 'primary') {
-    global $primary_api, $backup_api, $currencies_api, $open_access_api, $cache_duration;
+    global $currency_apis, $cache_duration;
     
-    $apis = [
-        'primary' => $primary_api,
-        'backup' => $backup_api,
-        'currencies' => $currencies_api,
-        'open' => $open_access_api
-    ];
-    
-    $base_url = $apis[$api_type] ?? $primary_api;
-    $query = http_build_query($params);
-    $url = $base_url . $endpoint . ($query ? '?' . $query : '');
-    $cache_key = md5($url);
+    $cache_key = md5($endpoint . serialize($params) . $api_type);
     $cache_file = sys_get_temp_dir() . '/exchange_' . $cache_key . '.json';
     
-    // Check cache
+    // Check cache first
     if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_duration) {
         return json_decode(file_get_contents($cache_file), true);
     }
     
-    // Fetch from API
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'header' => [
-                'User-Agent: Exchange Rate Checker/1.0',
-                'Accept: application/json'
-            ],
-            'timeout' => 10
-        ]
-    ]);
+    // Try different APIs based on endpoint
+    $attempts = [];
     
-    $response = @file_get_contents($url, false, $context);
-    if ($response === false) {
-        // Try different APIs in sequence
-        $fallback_order = ['backup', 'open', 'currencies'];
-        foreach ($fallback_order as $fallback) {
-            if ($fallback !== $api_type) {
-                $fallback_result = fetchExchangeData($endpoint, $params, $fallback);
-                if ($fallback_result) return $fallback_result;
-            }
-        
-        // Load all available currencies and populate dropdowns
-        async function loadAllCurrencies() {
-            try {
-                const response = await fetch('?action=currencies');
-                const data = await response.json();
-                
-                if (data && data.currencies) {
-                    allCurrencies = data.currencies;
-                    populateAllDropdowns();
-                    
-                    // Set default values and add event listeners after population
-                    document.getElementById('from-currency').value = 'USD';
-                    document.getElementById('to-currency').value = 'EUR';
-                    document.getElementById('budget-currency').value = 'USD';
-                    document.getElementById('destination-currency').value = 'EUR';
-                    document.getElementById('tip-currency').value = 'USD';
-                    document.getElementById('trend-base').value = 'USD';
-                    document.getElementById('trend-target').value = 'EUR';
-                    document.getElementById('comparison-base').value = 'USD';
-                    
-                    // Add event listeners after dropdowns are populated
-                    document.getElementById('from-currency').addEventListener('change', convertCurrency);
-                    document.getElementById('to-currency').addEventListener('change', convertCurrency);
-                    
-                    // Update currency count in stats
-                    const currencyCount = Object.keys(allCurrencies).length;
-                    document.getElementById('supported-currencies').textContent = currencyCount;
-                    document.getElementById('currency-count').textContent = currencyCount;
-                    document.getElementById('total-currencies').textContent = currencyCount;
-                }
-            } catch (error) {
-                console.error('Error loading currencies:', error);
-                // Fallback to popular currencies if all else fails
-                populateDropdownsWithPopular();
-            }
-        }
-        
-        // Populate all currency dropdowns with all available currencies
-        function populateAllDropdowns() {
-            const dropdowns = [
-                'from-currency', 'to-currency', 'budget-currency', 
-                'destination-currency', 'tip-currency', 'trend-base', 
-                'trend-target', 'comparison-base'
-            ];
-            
-            dropdowns.forEach(dropdownId => {
-                populateDropdown(dropdownId);
-            });
-        }
-        
-        // Populate a specific dropdown
-        function populateDropdown(dropdownId) {
-            const dropdown = document.getElementById(dropdownId);
-            if (!dropdown) return;
-            
-            // Clear existing options
-            dropdown.innerHTML = '';
-            
-            // Add popular currencies first
-            const popularSection = document.createElement('optgroup');
-            popularSection.label = 'Popular Currencies';
-            
-            Object.keys(popularCurrencies).forEach(code => {
-                if (allCurrencies[code]) {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = `${code} - ${allCurrencies[code].name}`;
-                    popularSection.appendChild(option);
-                }
-            });
-            
-            dropdown.appendChild(popularSection);
-            
-            // Add separator
-            const separator = document.createElement('optgroup');
-            separator.label = 'All Currencies';
-            
-            // Add all other currencies
-            Object.keys(allCurrencies).sort().forEach(code => {
-                if (!popularCurrencies[code]) {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = `${code} - ${allCurrencies[code].name}`;
-                    separator.appendChild(option);
-                }
-            });
-            
-            dropdown.appendChild(separator);
-        }
-        
-        // Fallback function for popular currencies only
-        function populateDropdownsWithPopular() {
-            const dropdowns = [
-                'from-currency', 'to-currency', 'budget-currency', 
-                'destination-currency', 'tip-currency', 'trend-base', 
-                'trend-target', 'comparison-base'
-            ];
-            
-            dropdowns.forEach(dropdownId => {
-                const dropdown = document.getElementById(dropdownId);
-                if (!dropdown) return;
-                
-                dropdown.innerHTML = '';
-                Object.keys(popularCurrencies).forEach(code => {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = `${code} - ${popularCurrencies[code].name}`;
-                    dropdown.appendChild(option);
-                });
-            });
-            
-            // Set defaults
-            document.getElementById('from-currency').value = 'USD';
-            document.getElementById('to-currency').value = 'EUR';
-            document.getElementById('budget-currency').value = 'USD';
-            document.getElementById('destination-currency').value = 'EUR';
-            document.getElementById('tip-currency').value = 'USD';
-            document.getElementById('trend-base').value = 'USD';
-            document.getElementById('trend-target').value = 'EUR';
-            document.getElementById('comparison-base').value = 'USD';
-            
-            // Add event listeners
-            document.getElementById('from-currency').addEventListener('change', convertCurrency);
-            document.getElementById('to-currency').addEventListener('change', convertCurrency);
-        }
-        }
-        return null;
-    }
-    
-    // Cache the response
-    file_put_contents($cache_file, $response);
-    
-    return json_decode($response, true);
-}
-
-// Get all available currencies from multiple free sources
-function getAllCurrencies() {
-    global $cache_duration;
-    
-    $cache_file = sys_get_temp_dir() . '/all_currencies.json';
-    
-    // Check cache first
-    if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_duration * 24) { // Cache for 24 hours
-        return json_decode(file_get_contents($cache_file), true);
-    }
-    
-    $all_currencies = [];
-    
-    // Try Frankfurter API first (free, no API key, comprehensive)
-    $frankfurter_url = 'https://api.frankfurter.app/currencies';
-    $response = @file_get_contents($frankfurter_url);
-    if ($response) {
-        $data = json_decode($response, true);
-        if ($data) {
-            foreach ($data as $code => $name) {
-                $all_currencies[$code] = [
-                    'name' => $name,
-                    'code' => $code
-                ];
-            }
+    if ($api_type === 'primary' || $api_type === 'currencies') {
+        // Use fawazahmed0 API for currencies and rates
+        if ($endpoint === '/currencies') {
+            $attempts[] = $currency_apis['primary'] . '/currencies.json';
+        } else {
+            $base = isset($params['base']) ? strtolower($params['base']) : 'usd';
+            $attempts[] = $currency_apis['primary'] . '/currencies/' . $base . '.json';
         }
     }
     
-    // Fallback to Fawaz Ahmed's API (200+ currencies)
-    if (empty($all_currencies)) {
-        $fawaz_url = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json';
-        $response = @file_get_contents($fawaz_url);
-        if ($response) {
+    // Add backup APIs
+    if ($endpoint !== '/currencies') {
+        $query = http_build_query($params);
+        $attempts[] = $currency_apis['backup1'] . $endpoint . ($query ? '?' . $query : '');
+        
+        if (strpos($endpoint, 'convert') === false && strpos($endpoint, 'timeseries') === false) {
+            $attempts[] = $currency_apis['backup2'] . $endpoint;
+        }
+    }
+    
+    // Try each API
+    foreach ($attempts as $url) {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => [
+                    'User-Agent: Exchange Rate Checker/1.0',
+                    'Accept: application/json'
+                ],
+                'timeout' => 10
+            ]
+        ]);
+        
+        $response = @file_get_contents($url, false, $context);
+        if ($response !== false) {
             $data = json_decode($response, true);
             if ($data) {
-                foreach ($data as $code => $name) {
-                    $all_currencies[strtoupper($code)] = [
-                        'name' => ucwords($name),
-                        'code' => strtoupper($code)
-                    ];
-                }
+                // Cache successful response
+                file_put_contents($cache_file, $response);
+                return $data;
             }
         }
     }
     
-    // Fallback to exchangerate.host symbols
-    if (empty($all_currencies)) {
-        $host_url = 'https://api.exchangerate.host/symbols';
-        $response = @file_get_contents($host_url);
-        if ($response) {
-            $data = json_decode($response, true);
-            if ($data && isset($data['symbols'])) {
-                foreach ($data['symbols'] as $code => $info) {
-                    $all_currencies[$code] = [
-                        'name' => $info['description'] ?? $code,
-                        'code' => $code
-                    ];
-                }
-            }
-        }
-    }
-    
-    // If still empty, use our hardcoded popular currencies as fallback
-    if (empty($all_currencies)) {
-        global $popular_currencies;
-        foreach ($popular_currencies as $code => $info) {
-            $all_currencies[$code] = [
-                'name' => $info['name'],
-                'code' => $code
-            ];
-        }
-    }
-    
-    // Sort currencies alphabetically
-    ksort($all_currencies);
-    
-    // Cache the result
-    file_put_contents($cache_file, json_encode($all_currencies));
-    
-    return $all_currencies;
+    return null;
 }
 
 // Handle AJAX requests
@@ -316,75 +273,120 @@ if (isset($_GET['action'])) {
     header('Content-Type: application/json');
     
     switch ($_GET['action']) {
-        case 'latest_rates':
-            $base = isset($_GET['base']) ? strtoupper($_GET['base']) : 'USD';
-            $symbols = isset($_GET['symbols']) ? strtoupper($_GET['symbols']) : '';
-            $params = ['base' => $base];
-            if ($symbols) {
-                $params['symbols'] = $symbols;
+        case 'currencies':
+            // Get all available currencies
+            $data = fetchExchangeData('/currencies', [], 'currencies');
+            if ($data) {
+                echo json_encode($data);
+            } else {
+                // Fallback to built-in currency list
+                echo json_encode($all_currencies);
             }
-            echo json_encode(fetchExchangeData('/latest', $params));
+            exit;
+            
+        case 'latest_rates':
+            $base = isset($_GET['base']) ? strtolower($_GET['base']) : 'usd';
+            $data = fetchExchangeData('/latest', ['base' => $base], 'primary');
+            
+            if ($data) {
+                // Handle different API response formats
+                if (isset($data[$base])) {
+                    // fawazahmed0 format
+                    echo json_encode(['rates' => $data[$base], 'base' => strtoupper($base)]);
+                } else {
+                    echo json_encode($data);
+                }
+            } else {
+                echo json_encode(['error' => 'Unable to fetch rates']);
+            }
             exit;
             
         case 'convert':
-            $from = strtoupper($_GET['from'] ?? 'USD');
-            $to = strtoupper($_GET['to'] ?? 'EUR');
+            $from = strtolower($_GET['from'] ?? 'usd');
+            $to = strtolower($_GET['to'] ?? 'eur');
             $amount = floatval($_GET['amount'] ?? 1);
-            $params = ['from' => $from, 'to' => $to, 'amount' => $amount];
-            echo json_encode(fetchExchangeData('/convert', $params));
+            
+            // Get rates from base currency
+            $data = fetchExchangeData('/latest', ['base' => $from], 'primary');
+            
+            if ($data && isset($data[$from][$to])) {
+                $rate = $data[$from][$to];
+                $result = $amount * $rate;
+                echo json_encode([
+                    'result' => $result,
+                    'rate' => $rate,
+                    'from' => strtoupper($from),
+                    'to' => strtoupper($to),
+                    'amount' => $amount
+                ]);
+            } else {
+                echo json_encode(['error' => 'Unable to convert']);
+            }
             exit;
             
         case 'historical':
             $date = $_GET['date'] ?? date('Y-m-d', strtotime('-1 day'));
-            $base = strtoupper($_GET['base'] ?? 'USD');
-            $symbols = isset($_GET['symbols']) ? strtoupper($_GET['symbols']) : '';
-            $params = ['base' => $base];
-            if ($symbols) {
-                $params['symbols'] = $symbols;
+            $base = strtolower($_GET['base'] ?? 'usd');
+            
+            // Try fawazahmed0 historical endpoint
+            $url_date = str_replace('-', '-', $date);
+            $cache_key = md5("historical_${base}_${date}");
+            $cache_file = sys_get_temp_dir() . '/exchange_' . $cache_key . '.json';
+            
+            if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_duration) {
+                echo file_get_contents($cache_file);
+                exit;
             }
-            echo json_encode(fetchExchangeData("/$date", $params));
+            
+            $historical_url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{$date}/v1/currencies/{$base}.json";
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'timeout' => 10
+                ]
+            ]);
+            
+            $response = @file_get_contents($historical_url, false, $context);
+            if ($response) {
+                file_put_contents($cache_file, $response);
+                echo $response;
+            } else {
+                echo json_encode(['error' => 'Historical data not available']);
+            }
             exit;
             
         case 'timeseries':
+            // For timeseries, we'll get data for each day in range
             $start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-7 days'));
             $end_date = $_GET['end_date'] ?? date('Y-m-d');
-            $base = strtoupper($_GET['base'] ?? 'USD');
-            $symbols = strtoupper($_GET['symbols'] ?? 'EUR,GBP,JPY');
-            $params = [
-                'start_date' => $start_date,
-                'end_date' => $end_date,
-                'base' => $base,
-                'symbols' => $symbols
-            ];
-            echo json_encode(fetchExchangeData('/timeseries', $params));
-            exit;
+            $base = strtolower($_GET['base'] ?? 'usd');
+            $symbols = explode(',', strtolower($_GET['symbols'] ?? 'eur,gbp,jpy'));
             
-        case 'fluctuation':
-            $start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-1 day'));
-            $end_date = $_GET['end_date'] ?? date('Y-m-d');
-            $base = strtoupper($_GET['base'] ?? 'USD');
-            $symbols = strtoupper($_GET['symbols'] ?? 'EUR,GBP,JPY');
-            $params = [
-                'start_date' => $start_date,
-                'end_date' => $end_date,
-                'base' => $base,
-                'symbols' => $symbols
-            ];
-            echo json_encode(fetchExchangeData('/fluctuation', $params));
-            exit;
+            $start = new DateTime($start_date);
+            $end = new DateTime($end_date);
+            $interval = new DateInterval('P1D');
+            $period = new DatePeriod($start, $interval, $end);
             
-        case 'currencies':
-            echo json_encode(['currencies' => getAllCurrencies()]);
-            exit;
+            $timeseries_data = [];
             
-        case 'all_symbols':
-            // Alternative endpoint for all currency symbols
-            $currencies = getAllCurrencies();
-            $symbols = [];
-            foreach ($currencies as $code => $info) {
-                $symbols[$code] = $info['name'];
+            foreach ($period as $date) {
+                $date_str = $date->format('Y-m-d');
+                $historical_data = fetchExchangeData('/historical', ['date' => $date_str, 'base' => $base]);
+                
+                if ($historical_data && isset($historical_data[$base])) {
+                    $day_rates = [];
+                    foreach ($symbols as $symbol) {
+                        if (isset($historical_data[$base][$symbol])) {
+                            $day_rates[$symbol] = $historical_data[$base][$symbol];
+                        }
+                    }
+                    if (!empty($day_rates)) {
+                        $timeseries_data[$date_str] = $day_rates;
+                    }
+                }
             }
-            echo json_encode(['symbols' => $symbols]);
+            
+            echo json_encode(['rates' => $timeseries_data, 'base' => strtoupper($base)]);
             exit;
     }
 }
@@ -394,7 +396,7 @@ if (isset($_GET['action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exchange Rate Checker - Traveler Tools</title>
+    <title>Exchange Rate Checker - Complete Currency Tools</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -575,15 +577,6 @@ if (isset($_GET['action'])) {
             color: #27ae60;
         }
         
-        .rate-change {
-            font-size: 0.9em;
-            font-weight: 600;
-        }
-        
-        .rate-up { color: #27ae60; }
-        .rate-down { color: #e74c3c; }
-        .rate-same { color: #95a5a6; }
-        
         .conversion-result {
             background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
@@ -654,57 +647,6 @@ if (isset($_GET['action'])) {
             border-left: 4px solid #2196f3;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .stat-item {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            border-left: 4px solid #3498db;
-        }
-        
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-        
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
-        
-        .chart-container {
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .trend-item {
-            display: flex;
-            align-items: center;
-            justify-content: between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .trend-date {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .trend-rate {
-            font-weight: 700;
-        }
-        
         .budget-breakdown {
             background: #f8f9fa;
             padding: 1rem;
@@ -734,6 +676,53 @@ if (isset($_GET['action'])) {
             border-radius: 10px;
             margin-top: 1rem;
             text-align: center;
+        }
+        
+        .trend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .trend-date {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .trend-rate {
+            font-weight: 700;
+        }
+        
+        .rate-up { color: #27ae60; }
+        .rate-down { color: #e74c3c; }
+        .rate-same { color: #95a5a6; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
         }
         
         .country-guide {
@@ -790,7 +779,7 @@ if (isset($_GET['action'])) {
 <body>
     <div class="header">
         <h1>💱 Exchange Rate Checker</h1>
-        <p>Complete currency tools for travelers • Real-time rates from multiple sources</p>
+        <p>ALL world currencies • 200+ currencies • Multiple free APIs • No API key required</p>
     </div>
     
     <div class="container">
@@ -824,14 +813,40 @@ if (isset($_GET['action'])) {
         <!-- Popular Exchange Rates -->
         <div class="tool-card">
             <h2><i class="fas fa-chart-line"></i>Popular Rates</h2>
-            <p>Select base currency (from <span id="total-currencies">200+</span> available):</p>
-            <div class="popular-currencies">
-                <?php foreach (array_slice($popular_currencies, 0, 8) as $code => $info): ?>
-                <div class="currency-button" onclick="setBaseCurrency('<?php echo $code; ?>')">
-                    <div><?php echo $info['flag']; ?></div>
-                    <div><?php echo $code; ?></div>
+            <p>Select base currency:</p>
+            <div class="popular-currencies" id="popular-currency-buttons">
+                <div class="currency-button active" onclick="setBaseCurrency('USD')">
+                    <div>🇺🇸</div>
+                    <div>USD</div>
                 </div>
-                <?php endforeach; ?>
+                <div class="currency-button" onclick="setBaseCurrency('EUR')">
+                    <div>🇪🇺</div>
+                    <div>EUR</div>
+                </div>
+                <div class="currency-button" onclick="setBaseCurrency('GBP')">
+                    <div>🇬🇧</div>
+                    <div>GBP</div>
+                </div>
+                <div class="currency-button" onclick="setBaseCurrency('JPY')">
+                    <div>🇯🇵</div>
+                    <div>JPY</div>
+                </div>
+                <div class="currency-button" onclick="setBaseCurrency('AUD')">
+                    <div>🇦🇺</div>
+                    <div>AUD</div>
+                </div>
+                <div class="currency-button" onclick="setBaseCurrency('CAD')">
+                    <div>🇨🇦</div>
+                    <div>CAD</div>
+                </div>
+                <div class="currency-button" onclick="setBaseCurrency('CHF')">
+                    <div>🇨🇭</div>
+                    <div>CHF</div>
+                </div>
+                <div class="currency-button" onclick="setBaseCurrency('CNY')">
+                    <div>🇨🇳</div>
+                    <div>CNY</div>
+                </div>
             </div>
             <div id="popular-rates" class="results"></div>
         </div>
@@ -847,14 +862,14 @@ if (isset($_GET['action'])) {
                 <div class="input-group">
                     <label for="budget-currency">Budget Currency</label>
                     <select id="budget-currency">
-                        <option value="">Loading currencies...</option>
+                        <option value="">Loading...</option>
                     </select>
                 </div>
             </div>
             <div class="input-group">
                 <label for="destination-currency">Destination Currency</label>
                 <select id="destination-currency">
-                    <option value="">Loading currencies...</option>
+                    <option value="">Loading...</option>
                 </select>
             </div>
             <div class="input-group">
@@ -878,23 +893,28 @@ if (isset($_GET['action'])) {
                 <div class="input-group">
                     <label for="tip-currency">Currency</label>
                     <select id="tip-currency">
-                        <option value="">Loading currencies...</option>
+                        <option value="">Loading...</option>
                     </select>
                 </div>
             </div>
             <div class="input-group">
                 <label for="tip-country">Country/Region</label>
                 <select id="tip-country">
-                    <option value="US">United States (18%)</option>
-                    <option value="GB">United Kingdom (10%)</option>
-                    <option value="AU">Australia (10%)</option>
-                    <option value="JP">Japan (0% - Not customary)</option>
-                    <option value="DE">Germany (10%)</option>
-                    <option value="FR">France (10%)</option>
-                    <option value="IT">Italy (10%)</option>
-                    <option value="ES">Spain (10%)</option>
-                    <option value="CA">Canada (15%)</option>
-                    <option value="MX">Mexico (15%)</option>
+                    <option value="US">🇺🇸 United States (18%)</option>
+                    <option value="GB">🇬🇧 United Kingdom (10%)</option>
+                    <option value="AU">🇦🇺 Australia (10%)</option>
+                    <option value="JP">🇯🇵 Japan (0% - Not customary)</option>
+                    <option value="DE">🇩🇪 Germany (10%)</option>
+                    <option value="FR">🇫🇷 France (10%)</option>
+                    <option value="IT">🇮🇹 Italy (10%)</option>
+                    <option value="ES">🇪🇸 Spain (10%)</option>
+                    <option value="CA">🇨🇦 Canada (15%)</option>
+                    <option value="MX">🇲🇽 Mexico (15%)</option>
+                    <option value="TH">🇹🇭 Thailand (5%)</option>
+                    <option value="SG">🇸🇬 Singapore (0%)</option>
+                    <option value="IN">🇮🇳 India (10%)</option>
+                    <option value="BR">🇧🇷 Brazil (10%)</option>
+                    <option value="ZA">🇿🇦 South Africa (15%)</option>
                 </select>
             </div>
             <button class="btn" onclick="calculateTip()">
@@ -910,13 +930,13 @@ if (isset($_GET['action'])) {
                 <div class="input-group">
                     <label for="trend-base">Base Currency</label>
                     <select id="trend-base">
-                        <option value="">Loading currencies...</option>
+                        <option value="">Loading...</option>
                     </select>
                 </div>
                 <div class="input-group">
                     <label for="trend-target">Target Currency</label>
                     <select id="trend-target">
-                        <option value="">Loading currencies...</option>
+                        <option value="">Loading...</option>
                     </select>
                 </div>
             </div>
@@ -932,7 +952,7 @@ if (isset($_GET['action'])) {
             <div class="input-group">
                 <label for="comparison-base">Compare Against</label>
                 <select id="comparison-base">
-                    <option value="">Loading currencies...</option>
+                    <option value="">Loading...</option>
                 </select>
             </div>
             <div class="input-group">
@@ -968,49 +988,14 @@ if (isset($_GET['action'])) {
             <div id="cash-card-result"></div>
         </div>
         
-        <!-- Country Currency Guide -->
-        <div class="tool-card wide-card">
-            <h2><i class="fas fa-globe"></i>Travel Destinations & Currencies</h2>
-            <div class="info-box">
-                <strong>Popular Travel Destinations:</strong> Quick reference for major currencies used around the world
-            </div>
-            <div class="country-guide">
-                <?php 
-                $destinations = [
-                    'US' => ['name' => 'United States', 'currency' => 'USD', 'flag' => '🇺🇸'],
-                    'GB' => ['name' => 'United Kingdom', 'currency' => 'GBP', 'flag' => '🇬🇧'],
-                    'DE' => ['name' => 'Germany', 'currency' => 'EUR', 'flag' => '🇩🇪'],
-                    'JP' => ['name' => 'Japan', 'currency' => 'JPY', 'flag' => '🇯🇵'],
-                    'AU' => ['name' => 'Australia', 'currency' => 'AUD', 'flag' => '🇦🇺'],
-                    'CA' => ['name' => 'Canada', 'currency' => 'CAD', 'flag' => '🇨🇦'],
-                    'CH' => ['name' => 'Switzerland', 'currency' => 'CHF', 'flag' => '🇨🇭'],
-                    'TH' => ['name' => 'Thailand', 'currency' => 'THB', 'flag' => '🇹🇭'],
-                    'SG' => ['name' => 'Singapore', 'currency' => 'SGD', 'flag' => '🇸🇬'],
-                    'MX' => ['name' => 'Mexico', 'currency' => 'MXN', 'flag' => '🇲🇽'],
-                    'IN' => ['name' => 'India', 'currency' => 'INR', 'flag' => '🇮🇳'],
-                    'BR' => ['name' => 'Brazil', 'currency' => 'BRL', 'flag' => '🇧🇷']
-                ];
-                foreach ($destinations as $code => $info): ?>
-                <div class="country-item">
-                    <div>
-                        <span class="country-flag"><?php echo $info['flag']; ?></span>
-                        <span class="country-name"><?php echo $info['name']; ?></span>
-                    </div>
-                    <div class="country-currency">Currency: <?php echo $info['currency']; ?></div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        
         <!-- API Information -->
         <div class="tool-card">
             <h2><i class="fas fa-info-circle"></i>API Information</h2>
             <div class="info-box">
-                <p><strong>Data Sources:</strong> Frankfurter, ExchangeRate.host, Fawaz API & ExchangeRate-API</p>
-                <p><strong>Update Frequency:</strong> Hourly updates (some real-time)</p>
-                <p><strong>API Keys:</strong> Not required - completely free!</p>
-                <p><strong>Rate Limits:</strong> Generous limits with smart caching</p>
-                <p><strong>Coverage:</strong> <span id="currency-count">200+</span> currencies worldwide</p>
+                <p><strong>Data Sources:</strong> fawazahmed0/currency-api, ExchangeRate.host</p>
+                <p><strong>No API Key Required:</strong> Completely free to use</p>
+                <p><strong>Coverage:</strong> 200+ currencies including crypto</p>
+                <p><strong>Rate Limits:</strong> None on primary API</p>
             </div>
             <div class="stats-grid">
                 <div class="stat-item">
@@ -1027,36 +1012,27 @@ if (isset($_GET['action'])) {
                 </div>
                 <div class="stat-item">
                     <div class="stat-value">Free</div>
-                    <div class="stat-label">API Keys Required</div>
+                    <div class="stat-label">API Key Required</div>
                 </div>
             </div>
             <p style="font-size: 0.9em; color: #7f8c8d; margin-top: 1rem;">
-                <strong>Multiple Free Data Sources:</strong><br>
-                • <strong>Frankfurter:</strong> Open-source, ECB data, no limits<br>
-                • <strong>ExchangeRate.host:</strong> Real-time rates, 170+ currencies<br>
-                • <strong>Fawaz Currency API:</strong> 200+ currencies, no rate limits<br>
-                • <strong>ExchangeRate-API:</strong> Backup source, reliable data<br><br>
-                
-                <strong>Advanced Features:</strong><br>
-                • Auto-discovery of all available currencies<br>
-                • Smart fallback between multiple APIs<br>
-                • Intelligent caching for performance<br>
-                • Real-time currency conversion<br>
-                • Historical rate analysis & trends<br>
-                • Travel budget planning tools<br>
-                • Country-specific tipping guides<br>
-                • Multi-currency comparison<br>
-                • Cash vs card cost analysis<br>
-                • Mobile-responsive design
+                <strong>Features:</strong><br>
+                • Complete currency coverage (200+ currencies)<br>
+                • Real-time & historical exchange rates<br>
+                • No API key or registration required<br>
+                • Multiple backup data sources<br>
+                • Cryptocurrency support (BTC, ETH, etc.)<br>
+                • Precious metals (Gold, Silver, Platinum)<br>
+                • Travel budget planning & tipping guides<br>
+                • Responsive design for all devices
             </p>
         </div>
     </div>
     
     <script>
         // Global variables
+        let allCurrencies = <?php echo json_encode($all_currencies); ?>;
         let currentRates = {};
-        let allCurrencies = {};
-        let popularCurrencies = <?php echo json_encode($popular_currencies); ?>;
         let tippingGuide = <?php echo json_encode($tipping_guide); ?>;
         
         // Initialize page
@@ -1065,11 +1041,81 @@ if (isset($_GET['action'])) {
             loadPopularRates('USD');
             updateLastUpdate();
             
-            // Add event listeners for real-time conversion
+            // Add event listeners
             document.getElementById('amount').addEventListener('input', debounce(convertCurrency, 500));
+            document.getElementById('from-currency').addEventListener('change', convertCurrency);
+            document.getElementById('to-currency').addEventListener('change', convertCurrency);
         });
         
-        // Debounce function to limit API calls
+        // Load all currencies from API
+        async function loadAllCurrencies() {
+            try {
+                const response = await fetch('?action=currencies');
+                const data = await response.json();
+                
+                let currencies = allCurrencies; // Use fallback
+                
+                // Check if we got currency data from API
+                if (data && typeof data === 'object') {
+                    // Handle different API response formats
+                    if (Object.keys(data).length > 50) {  // Assume it's currency data if many entries
+                        currencies = {};
+                        Object.entries(data).forEach(([code, name]) => {
+                            if (typeof name === 'string') {
+                                currencies[code.toUpperCase()] = {
+                                    name: name,
+                                    symbol: allCurrencies[code.toUpperCase()]?.symbol || code.toUpperCase(),
+                                    flag: allCurrencies[code.toUpperCase()]?.flag || '🌍'
+                                };
+                            }
+                        });
+                    }
+                }
+                
+                populateCurrencyDropdowns(currencies);
+                document.getElementById('supported-currencies').textContent = Object.keys(currencies).length;
+                
+            } catch (error) {
+                console.error('Error loading currencies:', error);
+                populateCurrencyDropdowns(allCurrencies);
+            }
+        }
+        
+        // Populate all currency dropdowns
+        function populateCurrencyDropdowns(currencies) {
+            const dropdowns = [
+                'from-currency', 'to-currency', 'budget-currency', 
+                'destination-currency', 'tip-currency', 'trend-base', 
+                'trend-target', 'comparison-base'
+            ];
+            
+            // Sort currencies by code
+            const sortedCurrencies = Object.entries(currencies).sort((a, b) => a[0].localeCompare(b[0]));
+            
+            dropdowns.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = '';
+                
+                sortedCurrencies.forEach(([code, info]) => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${info.flag || '🌍'} ${code} - ${info.name}`;
+                    select.appendChild(option);
+                });
+            });
+            
+            // Set default values
+            document.getElementById('from-currency').value = 'USD';
+            document.getElementById('to-currency').value = 'EUR';
+            document.getElementById('budget-currency').value = 'USD';
+            document.getElementById('destination-currency').value = 'EUR';
+            document.getElementById('tip-currency').value = 'USD';
+            document.getElementById('trend-base').value = 'USD';
+            document.getElementById('trend-target').value = 'EUR';
+            document.getElementById('comparison-base').value = 'USD';
+        }
+        
+        // Debounce function
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -1089,7 +1135,7 @@ if (isset($_GET['action'])) {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
             const resultDiv = document.getElementById('conversion-result');
             
-            if (amount <= 0) {
+            if (!from || !to || amount <= 0) {
                 resultDiv.innerHTML = '';
                 return;
             }
@@ -1100,22 +1146,20 @@ if (isset($_GET['action'])) {
                 const response = await fetch(`?action=convert&from=${from}&to=${to}&amount=${amount}`);
                 const data = await response.json();
                 
-                if (data && data.success !== false && data.result) {
-                    const rate = data.info ? data.info.rate : (data.result / amount);
+                if (data && data.result && !data.error) {
                     resultDiv.innerHTML = `
                         <div class="conversion-result">
                             <div class="conversion-amount">
                                 ${formatCurrency(data.result, to)}
                             </div>
                             <div class="conversion-details">
-                                ${amount} ${from} = ${data.result.toFixed(2)} ${to}<br>
-                                Rate: 1 ${from} = ${rate.toFixed(4)} ${to}
+                                ${amount} ${from} = ${data.result.toFixed(4)} ${to}<br>
+                                Rate: 1 ${from} = ${data.rate.toFixed(6)} ${to}
                             </div>
                         </div>
                     `;
                 } else {
-                    // Fallback: calculate from current rates
-                    await loadCurrentRate(from, to, amount);
+                    resultDiv.innerHTML = '<div class="error">Unable to convert. Please try again.</div>';
                 }
             } catch (error) {
                 resultDiv.innerHTML = '<div class="error">Error converting currency. Please try again.</div>';
@@ -1123,43 +1167,12 @@ if (isset($_GET['action'])) {
             }
         }
         
-        // Fallback conversion calculation
-        async function loadCurrentRate(from, to, amount) {
-            try {
-                const response = await fetch(`?action=latest_rates&base=${from}&symbols=${to}`);
-                const data = await response.json();
-                const resultDiv = document.getElementById('conversion-result');
-                
-                if (data && data.rates && data.rates[to]) {
-                    const rate = data.rates[to];
-                    const result = amount * rate;
-                    
-                    resultDiv.innerHTML = `
-                        <div class="conversion-result">
-                            <div class="conversion-amount">
-                                ${formatCurrency(result, to)}
-                            </div>
-                            <div class="conversion-details">
-                                ${amount} ${from} = ${result.toFixed(2)} ${to}<br>
-                                Rate: 1 ${from} = ${rate.toFixed(4)} ${to}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    resultDiv.innerHTML = '<div class="error">Unable to get current rates</div>';
-                }
-            } catch (error) {
-                document.getElementById('conversion-result').innerHTML = 
-                    '<div class="error">Error loading rates</div>';
-            }
-        }
-        
-        // Load popular rates for a base currency
+        // Load popular rates
         async function loadPopularRates(baseCurrency) {
             const resultDiv = document.getElementById('popular-rates');
             resultDiv.innerHTML = '<div class="loading">Loading rates...</div>';
             
-            // Update active currency button
+            // Update active button
             document.querySelectorAll('.currency-button').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.textContent.includes(baseCurrency)) {
@@ -1168,14 +1181,10 @@ if (isset($_GET['action'])) {
             });
             
             try {
-                const popularCodes = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY'];
-                const symbols = popularCodes.filter(code => code !== baseCurrency).join(',');
-                
-                const response = await fetch(`?action=latest_rates&base=${baseCurrency}&symbols=${symbols}`);
+                const response = await fetch(`?action=latest_rates&base=${baseCurrency}`);
                 const data = await response.json();
                 
                 if (data && data.rates) {
-                    currentRates = data.rates;
                     displayPopularRates(data.rates, baseCurrency);
                 } else {
                     resultDiv.innerHTML = '<div class="error">Unable to load rates</div>';
@@ -1189,18 +1198,22 @@ if (isset($_GET['action'])) {
         // Display popular rates
         function displayPopularRates(rates, baseCurrency) {
             const resultDiv = document.getElementById('popular-rates');
+            const popularCodes = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'SEK', 'NOK', 'DKK', 'NZD', 'SGD', 'HKD'];
+            
             let html = '';
             
-            for (const [currency, rate] of Object.entries(rates)) {
-                const currencyInfo = popularCurrencies[currency];
-                if (currencyInfo) {
+            popularCodes.forEach(code => {
+                if (code !== baseCurrency && rates[code.toLowerCase()]) {
+                    const rate = rates[code.toLowerCase()];
+                    const currencyInfo = allCurrencies[code];
+                    
                     html += `
                         <div class="currency-item">
                             <div class="currency-info">
                                 <div class="currency-code">
-                                    ${currencyInfo.flag} ${currency}
+                                    ${currencyInfo?.flag || '🌍'} ${code}
                                 </div>
-                                <div class="currency-name">${currencyInfo.name}</div>
+                                <div class="currency-name">${currencyInfo?.name || code}</div>
                             </div>
                             <div class="currency-rate">
                                 ${rate.toFixed(4)}
@@ -1208,17 +1221,17 @@ if (isset($_GET['action'])) {
                         </div>
                     `;
                 }
-            }
+            });
             
-            resultDiv.innerHTML = html;
+            resultDiv.innerHTML = html || '<div class="error">No rates available</div>';
         }
         
-        // Set base currency for popular rates
+        // Set base currency
         function setBaseCurrency(currency) {
             loadPopularRates(currency);
         }
         
-        // Calculate travel budget
+        // Calculate budget
         async function calculateBudget() {
             const budgetAmount = parseFloat(document.getElementById('budget-amount').value) || 0;
             const budgetCurrency = document.getElementById('budget-currency').value;
@@ -1226,8 +1239,8 @@ if (isset($_GET['action'])) {
             const tripDays = parseInt(document.getElementById('trip-days').value) || 1;
             const resultDiv = document.getElementById('budget-result');
             
-            if (budgetAmount <= 0) {
-                resultDiv.innerHTML = '<div class="error">Please enter a valid budget amount</div>';
+            if (budgetAmount <= 0 || !budgetCurrency || !destinationCurrency) {
+                resultDiv.innerHTML = '<div class="error">Please fill all fields</div>';
                 return;
             }
             
@@ -1286,14 +1299,14 @@ if (isset($_GET['action'])) {
             const country = document.getElementById('tip-country').value;
             const resultDiv = document.getElementById('tip-result');
             
-            if (billAmount <= 0) {
-                resultDiv.innerHTML = '<div class="error">Please enter a valid bill amount</div>';
+            if (billAmount <= 0 || !currency) {
+                resultDiv.innerHTML = '<div class="error">Please enter valid amounts</div>';
                 return;
             }
             
             const tipInfo = tippingGuide[country];
             if (!tipInfo) {
-                resultDiv.innerHTML = '<div class="error">Tipping information not available for this country</div>';
+                resultDiv.innerHTML = '<div class="error">Tipping information not available</div>';
                 return;
             }
             
@@ -1317,6 +1330,11 @@ if (isset($_GET['action'])) {
             const target = document.getElementById('trend-target').value;
             const resultDiv = document.getElementById('trends-result');
             
+            if (!base || !target) {
+                resultDiv.innerHTML = '<div class="error">Please select currencies</div>';
+                return;
+            }
+            
             resultDiv.innerHTML = '<div class="loading">Loading trend data...</div>';
             
             try {
@@ -1330,7 +1348,7 @@ if (isset($_GET['action'])) {
                 );
                 const data = await response.json();
                 
-                if (data && data.rates) {
+                if (data && data.rates && Object.keys(data.rates).length > 0) {
                     displayTrends(data.rates, base, target);
                 } else {
                     resultDiv.innerHTML = '<div class="error">Unable to load trend data</div>';
@@ -1344,13 +1362,21 @@ if (isset($_GET['action'])) {
         // Display trends
         function displayTrends(rates, base, target) {
             const resultDiv = document.getElementById('trends-result');
-            let html = '<div class="chart-container"><h4>7-Day Rate History</h4>';
+            let html = '<div style="background: white; padding: 1rem; border-radius: 8px;"><h4>7-Day Rate History</h4>';
             
             const sortedDates = Object.keys(rates).sort();
             let previousRate = null;
             
+            if (sortedDates.length === 0) {
+                html += '<p>No historical data available for this period.</p></div>';
+                resultDiv.innerHTML = html;
+                return;
+            }
+            
             sortedDates.forEach(date => {
-                const rate = rates[date][target];
+                const rate = rates[date][target.toLowerCase()];
+                if (!rate) return;
+                
                 let changeClass = 'rate-same';
                 let changeIcon = '→';
                 
@@ -1377,20 +1403,22 @@ if (isset($_GET['action'])) {
             });
             
             // Calculate trend summary
-            const firstRate = rates[sortedDates[0]][target];
-            const lastRate = rates[sortedDates[sortedDates.length - 1]][target];
-            const change = ((lastRate - firstRate) / firstRate * 100);
-            const changeClass = change > 0 ? 'rate-up' : (change < 0 ? 'rate-down' : 'rate-same');
-            
-            html += `
-                <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                    <strong>7-Day Summary:</strong><br>
-                    <span class="${changeClass}">
-                        ${change > 0 ? '+' : ''}${change.toFixed(2)}% change
-                        (${firstRate.toFixed(4)} → ${lastRate.toFixed(4)})
-                    </span>
-                </div>
-            `;
+            if (sortedDates.length >= 2) {
+                const firstRate = rates[sortedDates[0]][target.toLowerCase()];
+                const lastRate = rates[sortedDates[sortedDates.length - 1]][target.toLowerCase()];
+                const change = ((lastRate - firstRate) / firstRate * 100);
+                const changeClass = change > 0 ? 'rate-up' : (change < 0 ? 'rate-down' : 'rate-same');
+                
+                html += `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <strong>7-Day Summary:</strong><br>
+                        <span class="${changeClass}">
+                            ${change > 0 ? '+' : ''}${change.toFixed(2)}% change
+                            (${firstRate.toFixed(4)} → ${lastRate.toFixed(4)})
+                        </span>
+                    </div>
+                `;
+            }
             
             html += '</div>';
             resultDiv.innerHTML = html;
@@ -1402,13 +1430,15 @@ if (isset($_GET['action'])) {
             const amount = parseFloat(document.getElementById('comparison-amount').value) || 1;
             const resultDiv = document.getElementById('comparison-result');
             
+            if (!base) {
+                resultDiv.innerHTML = '<div class="error">Please select a base currency</div>';
+                return;
+            }
+            
             resultDiv.innerHTML = '<div class="loading">Loading comparison...</div>';
             
             try {
-                const currencies = ['EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'SEK'];
-                const symbols = currencies.filter(c => c !== base).join(',');
-                
-                const response = await fetch(`?action=latest_rates&base=${base}&symbols=${symbols}`);
+                const response = await fetch(`?action=latest_rates&base=${base}`);
                 const data = await response.json();
                 
                 if (data && data.rates) {
@@ -1427,21 +1457,31 @@ if (isset($_GET['action'])) {
             const resultDiv = document.getElementById('comparison-result');
             let html = `<h4>${amount} ${base} converts to:</h4>`;
             
-            // Sort by converted amount (descending)
-            const sortedRates = Object.entries(rates).sort((a, b) => b[1] * amount - a[1] * amount);
+            // Get top currencies to compare
+            const popularCodes = ['EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'SEK'];
+            const availableRates = [];
             
-            sortedRates.forEach(([currency, rate]) => {
+            popularCodes.forEach(code => {
+                if (rates[code.toLowerCase()]) {
+                    availableRates.push([code, rates[code.toLowerCase()]]);
+                }
+            });
+            
+            // Sort by converted amount (descending)
+            availableRates.sort((a, b) => b[1] * amount - a[1] * amount);
+            
+            availableRates.forEach(([currency, rate]) => {
                 const converted = amount * rate;
-                const currencyInfo = popularCurrencies[currency];
+                const currencyInfo = allCurrencies[currency];
                 
                 html += `
                     <div class="currency-item">
                         <div class="currency-info">
                             <div class="currency-code">
-                                ${currencyInfo ? currencyInfo.flag + ' ' : ''}${currency}
+                                ${currencyInfo?.flag || '🌍'} ${currency}
                             </div>
                             <div class="currency-name">
-                                ${currencyInfo ? currencyInfo.name : currency}
+                                ${currencyInfo?.name || currency}
                             </div>
                         </div>
                         <div class="currency-rate">
@@ -1470,7 +1510,6 @@ if (isset($_GET['action'])) {
             const cashCost = amount + atmFee;
             const difference = Math.abs(cardCost - cashCost);
             const cheaper = cardCost < cashCost ? 'Card' : 'Cash';
-            const savings = difference;
             
             resultDiv.innerHTML = `
                 <div class="budget-breakdown">
@@ -1488,7 +1527,7 @@ if (isset($_GET['action'])) {
                         <span><strong>${cheaper}</strong></span>
                     </div>
                     <div style="margin-top: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; color: #27ae60;">
-                        <strong>You save $${savings.toFixed(2)} by using ${cheaper.toLowerCase()}</strong>
+                        <strong>You save $${difference.toFixed(2)} by using ${cheaper.toLowerCase()}</strong>
                     </div>
                 </div>
             `;
@@ -1496,10 +1535,10 @@ if (isset($_GET['action'])) {
         
         // Utility functions
         function formatCurrency(amount, currency) {
-            const currencyInfo = popularCurrencies[currency];
-            const symbol = currencyInfo ? currencyInfo.symbol : currency;
+            const currencyInfo = allCurrencies[currency];
+            const symbol = currencyInfo?.symbol || currency;
             
-            if (['JPY', 'KRW'].includes(currency)) {
+            if (['JPY', 'KRW', 'IDR', 'VND'].includes(currency)) {
                 return `${symbol}${Math.round(amount).toLocaleString()}`;
             }
             
@@ -1527,15 +1566,15 @@ if (isset($_GET['action'])) {
                 });
         }
         
-        // Auto-refresh rates every 5 minutes
+        // Auto-refresh every 10 minutes
         setInterval(() => {
             const activeBase = document.querySelector('.currency-button.active');
             if (activeBase) {
                 const currency = activeBase.textContent.trim().split('\n')[1];
-                loadPopularRates(currency);
+                if (currency) loadPopularRates(currency);
             }
             updateLastUpdate();
-        }, 300000);
+        }, 600000);
     </script>
 </body>
 </html>
