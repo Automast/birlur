@@ -1,22 +1,71 @@
 <?php
-// OpenSky Flight Tracker - Comprehensive Traveler Tools
-// Uses OpenSky Network API for real-time flight data
-// Free API with rate limits: 400 credits/day for anonymous users
+// Exchange Rate Checker - Comprehensive Traveler Tools
+// Uses multiple free exchange rate APIs for reliability
+// Free APIs with various endpoints for different functionalities
 
 header('Content-Type: text/html; charset=UTF-8');
 
-// Configuration
-$opensky_base_url = 'https://opensky-network.org/api';
-$cache_duration = 10; // Cache for 10 seconds to respect rate limits
+// Configuration - Multiple free APIs with no API key required
+$primary_api = 'https://api.exchangerate.host';
+$backup_api = 'https://api.frankfurter.app';
+$currencies_api = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1';
+$open_access_api = 'https://open.er-api.com/v6';
+$cache_duration = 3600; // Cache for 1 hour to respect rate limits
 
-// Helper function to make API calls with caching
-function fetchOpenSkyData($endpoint, $params = []) {
-    global $opensky_base_url, $cache_duration;
+// Popular travel currencies and their details
+$popular_currencies = [
+    'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'flag' => '🇺🇸'],
+    'EUR' => ['name' => 'Euro', 'symbol' => '€', 'flag' => '🇪🇺'],
+    'GBP' => ['name' => 'British Pound', 'symbol' => '£', 'flag' => '🇬🇧'],
+    'JPY' => ['name' => 'Japanese Yen', 'symbol' => '¥', 'flag' => '🇯🇵'],
+    'AUD' => ['name' => 'Australian Dollar', 'symbol' => 'A$', 'flag' => '🇦🇺'],
+    'CAD' => ['name' => 'Canadian Dollar', 'symbol' => 'C$', 'flag' => '🇨🇦'],
+    'CHF' => ['name' => 'Swiss Franc', 'symbol' => 'CHF', 'flag' => '🇨🇭'],
+    'CNY' => ['name' => 'Chinese Yuan', 'symbol' => '¥', 'flag' => '🇨🇳'],
+    'SEK' => ['name' => 'Swedish Krona', 'symbol' => 'kr', 'flag' => '🇸🇪'],
+    'NOK' => ['name' => 'Norwegian Krone', 'symbol' => 'kr', 'flag' => '🇳🇴'],
+    'DKK' => ['name' => 'Danish Krone', 'symbol' => 'kr', 'flag' => '🇩🇰'],
+    'NZD' => ['name' => 'New Zealand Dollar', 'symbol' => 'NZ$', 'flag' => '🇳🇿'],
+    'SGD' => ['name' => 'Singapore Dollar', 'symbol' => 'S$', 'flag' => '🇸🇬'],
+    'HKD' => ['name' => 'Hong Kong Dollar', 'symbol' => 'HK$', 'flag' => '🇭🇰'],
+    'MXN' => ['name' => 'Mexican Peso', 'symbol' => '$', 'flag' => '🇲🇽'],
+    'INR' => ['name' => 'Indian Rupee', 'symbol' => '₹', 'flag' => '🇮🇳'],
+    'BRL' => ['name' => 'Brazilian Real', 'symbol' => 'R$', 'flag' => '🇧🇷'],
+    'ZAR' => ['name' => 'South African Rand', 'symbol' => 'R', 'flag' => '🇿🇦'],
+    'THB' => ['name' => 'Thai Baht', 'symbol' => '฿', 'flag' => '🇹🇭'],
+    'KRW' => ['name' => 'South Korean Won', 'symbol' => '₩', 'flag' => '🇰🇷']
+];
+
+// Common tipping customs by country
+$tipping_guide = [
+    'US' => ['percent' => 18, 'description' => 'Standard 15-20% for restaurants, 10-15% for taxis'],
+    'GB' => ['percent' => 10, 'description' => '10-15% for restaurants if service charge not included'],
+    'AU' => ['percent' => 10, 'description' => 'Tipping not mandatory but 10% is appreciated'],
+    'JP' => ['percent' => 0, 'description' => 'Tipping not customary and can be offensive'],
+    'DE' => ['percent' => 10, 'description' => '10% is standard, round up to nearest Euro'],
+    'FR' => ['percent' => 10, 'description' => 'Service included but 5-10% extra is polite'],
+    'IT' => ['percent' => 10, 'description' => 'Round up or 10% for good service'],
+    'ES' => ['percent' => 10, 'description' => 'Small tips appreciated, 5-10% for restaurants'],
+    'CA' => ['percent' => 15, 'description' => '15-20% standard, similar to US'],
+    'MX' => ['percent' => 15, 'description' => '10-15% for restaurants, round up for services']
+];
+
+// Helper function to make API calls with caching and multiple fallbacks
+function fetchExchangeData($endpoint, $params = [], $api_type = 'primary') {
+    global $primary_api, $backup_api, $currencies_api, $open_access_api, $cache_duration;
     
+    $apis = [
+        'primary' => $primary_api,
+        'backup' => $backup_api,
+        'currencies' => $currencies_api,
+        'open' => $open_access_api
+    ];
+    
+    $base_url = $apis[$api_type] ?? $primary_api;
     $query = http_build_query($params);
-    $url = $opensky_base_url . $endpoint . ($query ? '?' . $query : '');
+    $url = $base_url . $endpoint . ($query ? '?' . $query : '');
     $cache_key = md5($url);
-    $cache_file = sys_get_temp_dir() . '/opensky_' . $cache_key . '.json';
+    $cache_file = sys_get_temp_dir() . '/exchange_' . $cache_key . '.json';
     
     // Check cache
     if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_duration) {
@@ -28,7 +77,8 @@ function fetchOpenSkyData($endpoint, $params = []) {
         'http' => [
             'method' => 'GET',
             'header' => [
-                'User-Agent: OpenSky Flight Tracker/1.0'
+                'User-Agent: Exchange Rate Checker/1.0',
+                'Accept: application/json'
             ],
             'timeout' => 10
         ]
@@ -36,6 +86,140 @@ function fetchOpenSkyData($endpoint, $params = []) {
     
     $response = @file_get_contents($url, false, $context);
     if ($response === false) {
+        // Try different APIs in sequence
+        $fallback_order = ['backup', 'open', 'currencies'];
+        foreach ($fallback_order as $fallback) {
+            if ($fallback !== $api_type) {
+                $fallback_result = fetchExchangeData($endpoint, $params, $fallback);
+                if ($fallback_result) return $fallback_result;
+            }
+        
+        // Load all available currencies and populate dropdowns
+        async function loadAllCurrencies() {
+            try {
+                const response = await fetch('?action=currencies');
+                const data = await response.json();
+                
+                if (data && data.currencies) {
+                    allCurrencies = data.currencies;
+                    populateAllDropdowns();
+                    
+                    // Set default values and add event listeners after population
+                    document.getElementById('from-currency').value = 'USD';
+                    document.getElementById('to-currency').value = 'EUR';
+                    document.getElementById('budget-currency').value = 'USD';
+                    document.getElementById('destination-currency').value = 'EUR';
+                    document.getElementById('tip-currency').value = 'USD';
+                    document.getElementById('trend-base').value = 'USD';
+                    document.getElementById('trend-target').value = 'EUR';
+                    document.getElementById('comparison-base').value = 'USD';
+                    
+                    // Add event listeners after dropdowns are populated
+                    document.getElementById('from-currency').addEventListener('change', convertCurrency);
+                    document.getElementById('to-currency').addEventListener('change', convertCurrency);
+                    
+                    // Update currency count in stats
+                    const currencyCount = Object.keys(allCurrencies).length;
+                    document.getElementById('supported-currencies').textContent = currencyCount;
+                    document.getElementById('currency-count').textContent = currencyCount;
+                    document.getElementById('total-currencies').textContent = currencyCount;
+                }
+            } catch (error) {
+                console.error('Error loading currencies:', error);
+                // Fallback to popular currencies if all else fails
+                populateDropdownsWithPopular();
+            }
+        }
+        
+        // Populate all currency dropdowns with all available currencies
+        function populateAllDropdowns() {
+            const dropdowns = [
+                'from-currency', 'to-currency', 'budget-currency', 
+                'destination-currency', 'tip-currency', 'trend-base', 
+                'trend-target', 'comparison-base'
+            ];
+            
+            dropdowns.forEach(dropdownId => {
+                populateDropdown(dropdownId);
+            });
+        }
+        
+        // Populate a specific dropdown
+        function populateDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) return;
+            
+            // Clear existing options
+            dropdown.innerHTML = '';
+            
+            // Add popular currencies first
+            const popularSection = document.createElement('optgroup');
+            popularSection.label = 'Popular Currencies';
+            
+            Object.keys(popularCurrencies).forEach(code => {
+                if (allCurrencies[code]) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${code} - ${allCurrencies[code].name}`;
+                    popularSection.appendChild(option);
+                }
+            });
+            
+            dropdown.appendChild(popularSection);
+            
+            // Add separator
+            const separator = document.createElement('optgroup');
+            separator.label = 'All Currencies';
+            
+            // Add all other currencies
+            Object.keys(allCurrencies).sort().forEach(code => {
+                if (!popularCurrencies[code]) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${code} - ${allCurrencies[code].name}`;
+                    separator.appendChild(option);
+                }
+            });
+            
+            dropdown.appendChild(separator);
+        }
+        
+        // Fallback function for popular currencies only
+        function populateDropdownsWithPopular() {
+            const dropdowns = [
+                'from-currency', 'to-currency', 'budget-currency', 
+                'destination-currency', 'tip-currency', 'trend-base', 
+                'trend-target', 'comparison-base'
+            ];
+            
+            dropdowns.forEach(dropdownId => {
+                const dropdown = document.getElementById(dropdownId);
+                if (!dropdown) return;
+                
+                dropdown.innerHTML = '';
+                Object.keys(popularCurrencies).forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${code} - ${popularCurrencies[code].name}`;
+                    dropdown.appendChild(option);
+                });
+            });
+            
+            // Set defaults
+            document.getElementById('from-currency').value = 'USD';
+            document.getElementById('to-currency').value = 'EUR';
+            document.getElementById('budget-currency').value = 'USD';
+            document.getElementById('destination-currency').value = 'EUR';
+            document.getElementById('tip-currency').value = 'USD';
+            document.getElementById('trend-base').value = 'USD';
+            document.getElementById('trend-target').value = 'EUR';
+            document.getElementById('comparison-base').value = 'USD';
+            
+            // Add event listeners
+            document.getElementById('from-currency').addEventListener('change', convertCurrency);
+            document.getElementById('to-currency').addEventListener('change', convertCurrency);
+        }
+        }
         return null;
     }
     
@@ -45,56 +229,162 @@ function fetchOpenSkyData($endpoint, $params = []) {
     return json_decode($response, true);
 }
 
+// Get all available currencies from multiple free sources
+function getAllCurrencies() {
+    global $cache_duration;
+    
+    $cache_file = sys_get_temp_dir() . '/all_currencies.json';
+    
+    // Check cache first
+    if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_duration * 24) { // Cache for 24 hours
+        return json_decode(file_get_contents($cache_file), true);
+    }
+    
+    $all_currencies = [];
+    
+    // Try Frankfurter API first (free, no API key, comprehensive)
+    $frankfurter_url = 'https://api.frankfurter.app/currencies';
+    $response = @file_get_contents($frankfurter_url);
+    if ($response) {
+        $data = json_decode($response, true);
+        if ($data) {
+            foreach ($data as $code => $name) {
+                $all_currencies[$code] = [
+                    'name' => $name,
+                    'code' => $code
+                ];
+            }
+        }
+    }
+    
+    // Fallback to Fawaz Ahmed's API (200+ currencies)
+    if (empty($all_currencies)) {
+        $fawaz_url = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json';
+        $response = @file_get_contents($fawaz_url);
+        if ($response) {
+            $data = json_decode($response, true);
+            if ($data) {
+                foreach ($data as $code => $name) {
+                    $all_currencies[strtoupper($code)] = [
+                        'name' => ucwords($name),
+                        'code' => strtoupper($code)
+                    ];
+                }
+            }
+        }
+    }
+    
+    // Fallback to exchangerate.host symbols
+    if (empty($all_currencies)) {
+        $host_url = 'https://api.exchangerate.host/symbols';
+        $response = @file_get_contents($host_url);
+        if ($response) {
+            $data = json_decode($response, true);
+            if ($data && isset($data['symbols'])) {
+                foreach ($data['symbols'] as $code => $info) {
+                    $all_currencies[$code] = [
+                        'name' => $info['description'] ?? $code,
+                        'code' => $code
+                    ];
+                }
+            }
+        }
+    }
+    
+    // If still empty, use our hardcoded popular currencies as fallback
+    if (empty($all_currencies)) {
+        global $popular_currencies;
+        foreach ($popular_currencies as $code => $info) {
+            $all_currencies[$code] = [
+                'name' => $info['name'],
+                'code' => $code
+            ];
+        }
+    }
+    
+    // Sort currencies alphabetically
+    ksort($all_currencies);
+    
+    // Cache the result
+    file_put_contents($cache_file, json_encode($all_currencies));
+    
+    return $all_currencies;
+}
+
 // Handle AJAX requests
 if (isset($_GET['action'])) {
     header('Content-Type: application/json');
     
     switch ($_GET['action']) {
-        case 'states':
-            $bbox = isset($_GET['bbox']) ? explode(',', $_GET['bbox']) : null;
-            $params = [];
-            if ($bbox && count($bbox) == 4) {
-                $params = [
-                    'lamin' => (float)$bbox[0],
-                    'lomin' => (float)$bbox[1], 
-                    'lamax' => (float)$bbox[2],
-                    'lomax' => (float)$bbox[3]
-                ];
+        case 'latest_rates':
+            $base = isset($_GET['base']) ? strtoupper($_GET['base']) : 'USD';
+            $symbols = isset($_GET['symbols']) ? strtoupper($_GET['symbols']) : '';
+            $params = ['base' => $base];
+            if ($symbols) {
+                $params['symbols'] = $symbols;
             }
-            echo json_encode(fetchOpenSkyData('/states/all', $params));
+            echo json_encode(fetchExchangeData('/latest', $params));
             exit;
             
-        case 'flights_aircraft':
-            if (isset($_GET['icao24'])) {
-                $params = [
-                    'icao24' => strtolower($_GET['icao24']),
-                    'begin' => time() - 86400, // Last 24 hours
-                    'end' => time()
-                ];
-                echo json_encode(fetchOpenSkyData('/flights/aircraft', $params));
-            }
+        case 'convert':
+            $from = strtoupper($_GET['from'] ?? 'USD');
+            $to = strtoupper($_GET['to'] ?? 'EUR');
+            $amount = floatval($_GET['amount'] ?? 1);
+            $params = ['from' => $from, 'to' => $to, 'amount' => $amount];
+            echo json_encode(fetchExchangeData('/convert', $params));
             exit;
             
-        case 'airport_arrivals':
-            if (isset($_GET['airport'])) {
-                $params = [
-                    'airport' => strtoupper($_GET['airport']),
-                    'begin' => time() - 7200, // Last 2 hours
-                    'end' => time()
-                ];
-                echo json_encode(fetchOpenSkyData('/flights/arrival', $params));
+        case 'historical':
+            $date = $_GET['date'] ?? date('Y-m-d', strtotime('-1 day'));
+            $base = strtoupper($_GET['base'] ?? 'USD');
+            $symbols = isset($_GET['symbols']) ? strtoupper($_GET['symbols']) : '';
+            $params = ['base' => $base];
+            if ($symbols) {
+                $params['symbols'] = $symbols;
             }
+            echo json_encode(fetchExchangeData("/$date", $params));
             exit;
             
-        case 'airport_departures':
-            if (isset($_GET['airport'])) {
-                $params = [
-                    'airport' => strtoupper($_GET['airport']),
-                    'begin' => time() - 7200, // Last 2 hours  
-                    'end' => time()
-                ];
-                echo json_encode(fetchOpenSkyData('/flights/departure', $params));
+        case 'timeseries':
+            $start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-7 days'));
+            $end_date = $_GET['end_date'] ?? date('Y-m-d');
+            $base = strtoupper($_GET['base'] ?? 'USD');
+            $symbols = strtoupper($_GET['symbols'] ?? 'EUR,GBP,JPY');
+            $params = [
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'base' => $base,
+                'symbols' => $symbols
+            ];
+            echo json_encode(fetchExchangeData('/timeseries', $params));
+            exit;
+            
+        case 'fluctuation':
+            $start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-1 day'));
+            $end_date = $_GET['end_date'] ?? date('Y-m-d');
+            $base = strtoupper($_GET['base'] ?? 'USD');
+            $symbols = strtoupper($_GET['symbols'] ?? 'EUR,GBP,JPY');
+            $params = [
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'base' => $base,
+                'symbols' => $symbols
+            ];
+            echo json_encode(fetchExchangeData('/fluctuation', $params));
+            exit;
+            
+        case 'currencies':
+            echo json_encode(['currencies' => getAllCurrencies()]);
+            exit;
+            
+        case 'all_symbols':
+            // Alternative endpoint for all currency symbols
+            $currencies = getAllCurrencies();
+            $symbols = [];
+            foreach ($currencies as $code => $info) {
+                $symbols[$code] = $info['name'];
             }
+            echo json_encode(['symbols' => $symbols]);
             exit;
     }
 }
@@ -104,8 +394,8 @@ if (isset($_GET['action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenSky Flight Tracker - Traveler Tools</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Exchange Rate Checker - Traveler Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -145,7 +435,7 @@ if (isset($_GET['action'])) {
             margin: 2rem auto;
             padding: 0 1rem;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
         }
         
@@ -169,19 +459,13 @@ if (isset($_GET['action'])) {
             font-size: 1.5em;
             border-bottom: 2px solid #3498db;
             padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
-        .map-container {
+        .wide-card {
             grid-column: 1 / -1;
-            height: 500px;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        #map {
-            height: 100%;
-            width: 100%;
         }
         
         .input-group {
@@ -209,6 +493,12 @@ if (isset($_GET['action'])) {
             border-color: #3498db;
         }
         
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
         .btn {
             background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
@@ -220,6 +510,9 @@ if (isset($_GET['action'])) {
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .btn:hover {
@@ -232,57 +525,108 @@ if (isset($_GET['action'])) {
             box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
         }
         
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+        
         .results {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             margin-top: 1rem;
         }
         
-        .flight-item {
+        .currency-item {
             background: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 0.5rem;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: between;
         }
         
-        .flight-item:hover {
+        .currency-item:hover {
             background: #e3f2fd;
             border-color: #3498db;
             transform: translateX(5px);
         }
         
-        .flight-callsign {
+        .currency-info {
+            flex-grow: 1;
+        }
+        
+        .currency-code {
             font-weight: 700;
             color: #2c3e50;
             font-size: 1.1em;
         }
         
-        .flight-details {
+        .currency-name {
             color: #7f8c8d;
             font-size: 0.9em;
-            margin-top: 0.3rem;
         }
         
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
+        .currency-rate {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #27ae60;
         }
         
-        .status-airborne { background-color: #27ae60; }
-        .status-ground { background-color: #e74c3c; }
-        .status-unknown { background-color: #95a5a6; }
+        .rate-change {
+            font-size: 0.9em;
+            font-weight: 600;
+        }
         
-        .coords-display {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
+        .rate-up { color: #27ae60; }
+        .rate-down { color: #e74c3c; }
+        .rate-same { color: #95a5a6; }
+        
+        .conversion-result {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
             margin-top: 1rem;
-            font-family: 'Courier New', monospace;
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .conversion-amount {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .conversion-details {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .popular-currencies {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .currency-button {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        .currency-button:hover, .currency-button.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
         }
         
         .loading {
@@ -310,43 +654,6 @@ if (isset($_GET['action'])) {
             border-left: 4px solid #2196f3;
         }
         
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-                margin: 1rem;
-                padding: 0 0.5rem;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .map-container {
-                height: 300px;
-            }
-        }
-        
-        .aircraft-icon {
-            background: #3498db;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        
-        .popup-content {
-            max-width: 250px;
-        }
-        
-        .popup-content h3 {
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-        
-        .popup-content p {
-            margin: 0.2rem 0;
-            font-size: 0.9em;
-        }
-        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -372,558 +679,863 @@ if (isset($_GET['action'])) {
             color: #7f8c8d;
             font-size: 0.9em;
         }
+        
+        .chart-container {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .trend-item {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .trend-date {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .trend-rate {
+            font-weight: 700;
+        }
+        
+        .budget-breakdown {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .budget-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .budget-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+        
+        .tip-result {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .country-guide {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .country-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .country-flag {
+            font-size: 1.5em;
+            margin-right: 0.5rem;
+        }
+        
+        .country-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .country-currency {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 0.3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                margin: 1rem;
+                padding: 0 0.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .popular-currencies {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>✈️ OpenSky Flight Tracker</h1>
-        <p>Real-time flight data for travelers • Powered by OpenSky Network API</p>
+        <h1>💱 Exchange Rate Checker</h1>
+        <p>Complete currency tools for travelers • Real-time rates from multiple sources</p>
     </div>
     
     <div class="container">
-        <!-- Live Flight Map -->
-        <div class="tool-card map-container">
-            <div id="map"></div>
-        </div>
-        
-        <!-- Flight Search -->
+        <!-- Live Currency Converter -->
         <div class="tool-card">
-            <h2>🔍 Flight Search</h2>
+            <h2><i class="fas fa-exchange-alt"></i>Currency Converter</h2>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="from-currency">From</label>
+                    <select id="from-currency">
+                        <option value="">Loading currencies...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="to-currency">To</label>
+                    <select id="to-currency">
+                        <option value="">Loading currencies...</option>
+                    </select>
+                </div>
+            </div>
             <div class="input-group">
-                <label for="search-input">Search by Callsign or ICAO24</label>
-                <input type="text" id="search-input" placeholder="e.g., UAL123 or 3c6444" />
+                <label for="amount">Amount</label>
+                <input type="number" id="amount" value="100" min="0" step="0.01" />
             </div>
-            <button class="btn" onclick="searchFlight()">Search Flight</button>
-            <div id="flight-results" class="results"></div>
+            <button class="btn" onclick="convertCurrency()">
+                <i class="fas fa-calculator"></i> Convert
+            </button>
+            <div id="conversion-result"></div>
         </div>
         
-        <!-- Airport Information -->
+        <!-- Popular Exchange Rates -->
         <div class="tool-card">
-            <h2>🏢 Airport Board</h2>
+            <h2><i class="fas fa-chart-line"></i>Popular Rates</h2>
+            <p>Select base currency (from <span id="total-currencies">200+</span> available):</p>
+            <div class="popular-currencies">
+                <?php foreach (array_slice($popular_currencies, 0, 8) as $code => $info): ?>
+                <div class="currency-button" onclick="setBaseCurrency('<?php echo $code; ?>')">
+                    <div><?php echo $info['flag']; ?></div>
+                    <div><?php echo $code; ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div id="popular-rates" class="results"></div>
+        </div>
+        
+        <!-- Travel Budget Calculator -->
+        <div class="tool-card">
+            <h2><i class="fas fa-wallet"></i>Travel Budget Calculator</h2>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="budget-amount">Budget Amount</label>
+                    <input type="number" id="budget-amount" value="1000" min="0" step="10" />
+                </div>
+                <div class="input-group">
+                    <label for="budget-currency">Budget Currency</label>
+                    <select id="budget-currency">
+                        <option value="">Loading currencies...</option>
+                    </select>
+                </div>
+            </div>
             <div class="input-group">
-                <label for="airport-input">Airport ICAO Code</label>
-                <input type="text" id="airport-input" placeholder="e.g., KJFK, EGLL, EDDF" />
+                <label for="destination-currency">Destination Currency</label>
+                <select id="destination-currency">
+                    <option value="">Loading currencies...</option>
+                </select>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button class="btn" onclick="getAirportArrivals()">Arrivals</button>
-                <button class="btn btn-secondary" onclick="getAirportDepartures()">Departures</button>
+            <div class="input-group">
+                <label for="trip-days">Trip Duration (days)</label>
+                <input type="number" id="trip-days" value="7" min="1" max="365" />
             </div>
-            <div id="airport-results" class="results"></div>
+            <button class="btn btn-success" onclick="calculateBudget()">
+                <i class="fas fa-calculator"></i> Calculate Budget
+            </button>
+            <div id="budget-result"></div>
         </div>
         
-        <!-- Overhead Traffic -->
+        <!-- Tipping Calculator -->
         <div class="tool-card">
-            <h2>📡 What's Flying Overhead</h2>
-            <p>Click to detect your location and show nearby aircraft:</p>
-            <button class="btn" onclick="detectLocation()">📍 Find My Location</button>
-            <div id="location-coords" class="coords-display" style="display: none;"></div>
-            <div id="overhead-results" class="results"></div>
+            <h2><i class="fas fa-hand-holding-usd"></i>Tipping Calculator</h2>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="bill-amount">Bill Amount</label>
+                    <input type="number" id="bill-amount" value="50" min="0" step="0.01" />
+                </div>
+                <div class="input-group">
+                    <label for="tip-currency">Currency</label>
+                    <select id="tip-currency">
+                        <option value="">Loading currencies...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="tip-country">Country/Region</label>
+                <select id="tip-country">
+                    <option value="US">United States (18%)</option>
+                    <option value="GB">United Kingdom (10%)</option>
+                    <option value="AU">Australia (10%)</option>
+                    <option value="JP">Japan (0% - Not customary)</option>
+                    <option value="DE">Germany (10%)</option>
+                    <option value="FR">France (10%)</option>
+                    <option value="IT">Italy (10%)</option>
+                    <option value="ES">Spain (10%)</option>
+                    <option value="CA">Canada (15%)</option>
+                    <option value="MX">Mexico (15%)</option>
+                </select>
+            </div>
+            <button class="btn" onclick="calculateTip()">
+                <i class="fas fa-percentage"></i> Calculate Tip
+            </button>
+            <div id="tip-result"></div>
         </div>
         
-        <!-- Statistics -->
+        <!-- Rate History & Trends -->
+        <div class="tool-card wide-card">
+            <h2><i class="fas fa-history"></i>Rate History & Trends (7 Days)</h2>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="trend-base">Base Currency</label>
+                    <select id="trend-base">
+                        <option value="">Loading currencies...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="trend-target">Target Currency</label>
+                    <select id="trend-target">
+                        <option value="">Loading currencies...</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="loadTrends()">
+                <i class="fas fa-chart-area"></i> Load Trends
+            </button>
+            <div id="trends-result"></div>
+        </div>
+        
+        <!-- Multi-Currency Comparison -->
         <div class="tool-card">
-            <h2>📊 Live Statistics</h2>
-            <button class="btn" onclick="updateStats()">Refresh Stats</button>
-            <div id="stats-container" class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="total-aircraft">-</div>
-                    <div class="stat-label">Aircraft Tracked</div>
+            <h2><i class="fas fa-balance-scale"></i>Multi-Currency Comparison</h2>
+            <div class="input-group">
+                <label for="comparison-base">Compare Against</label>
+                <select id="comparison-base">
+                    <option value="">Loading currencies...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="comparison-amount">Amount</label>
+                <input type="number" id="comparison-amount" value="100" min="0" step="0.01" />
+            </div>
+            <button class="btn btn-secondary" onclick="compareMultiple()">
+                <i class="fas fa-coins"></i> Compare Rates
+            </button>
+            <div id="comparison-result" class="results"></div>
+        </div>
+        
+        <!-- Cash vs Card Calculator -->
+        <div class="tool-card">
+            <h2><i class="fas fa-credit-card"></i>Cash vs Card Calculator</h2>
+            <div class="input-group">
+                <label for="transaction-amount">Transaction Amount</label>
+                <input type="number" id="transaction-amount" value="100" min="0" step="0.01" />
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="card-fee">Card Foreign Fee (%)</label>
+                    <input type="number" id="card-fee" value="2.5" min="0" max="10" step="0.1" />
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="countries">-</div>
-                    <div class="stat-label">Countries</div>
+                <div class="input-group">
+                    <label for="atm-fee">ATM Withdrawal Fee</label>
+                    <input type="number" id="atm-fee" value="5" min="0" step="0.5" />
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="airborne">-</div>
-                    <div class="stat-label">Airborne</div>
+            </div>
+            <button class="btn" onclick="compareCashCard()">
+                <i class="fas fa-calculator"></i> Compare Costs
+            </button>
+            <div id="cash-card-result"></div>
+        </div>
+        
+        <!-- Country Currency Guide -->
+        <div class="tool-card wide-card">
+            <h2><i class="fas fa-globe"></i>Travel Destinations & Currencies</h2>
+            <div class="info-box">
+                <strong>Popular Travel Destinations:</strong> Quick reference for major currencies used around the world
+            </div>
+            <div class="country-guide">
+                <?php 
+                $destinations = [
+                    'US' => ['name' => 'United States', 'currency' => 'USD', 'flag' => '🇺🇸'],
+                    'GB' => ['name' => 'United Kingdom', 'currency' => 'GBP', 'flag' => '🇬🇧'],
+                    'DE' => ['name' => 'Germany', 'currency' => 'EUR', 'flag' => '🇩🇪'],
+                    'JP' => ['name' => 'Japan', 'currency' => 'JPY', 'flag' => '🇯🇵'],
+                    'AU' => ['name' => 'Australia', 'currency' => 'AUD', 'flag' => '🇦🇺'],
+                    'CA' => ['name' => 'Canada', 'currency' => 'CAD', 'flag' => '🇨🇦'],
+                    'CH' => ['name' => 'Switzerland', 'currency' => 'CHF', 'flag' => '🇨🇭'],
+                    'TH' => ['name' => 'Thailand', 'currency' => 'THB', 'flag' => '🇹🇭'],
+                    'SG' => ['name' => 'Singapore', 'currency' => 'SGD', 'flag' => '🇸🇬'],
+                    'MX' => ['name' => 'Mexico', 'currency' => 'MXN', 'flag' => '🇲🇽'],
+                    'IN' => ['name' => 'India', 'currency' => 'INR', 'flag' => '🇮🇳'],
+                    'BR' => ['name' => 'Brazil', 'currency' => 'BRL', 'flag' => '🇧🇷']
+                ];
+                foreach ($destinations as $code => $info): ?>
+                <div class="country-item">
+                    <div>
+                        <span class="country-flag"><?php echo $info['flag']; ?></span>
+                        <span class="country-name"><?php echo $info['name']; ?></span>
+                    </div>
+                    <div class="country-currency">Currency: <?php echo $info['currency']; ?></div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="ground">-</div>
-                    <div class="stat-label">On Ground</div>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
         
         <!-- API Information -->
         <div class="tool-card">
-            <h2>ℹ️ API Information</h2>
+            <h2><i class="fas fa-info-circle"></i>API Information</h2>
             <div class="info-box">
-                <p><strong>Data Source:</strong> OpenSky Network</p>
-                <p><strong>Update Rate:</strong> Every 10 seconds (anonymous)</p>
-                <p><strong>Rate Limit:</strong> 400 API credits per day</p>
-                <p><strong>Coverage:</strong> Global ADS-B data</p>
+                <p><strong>Data Sources:</strong> Frankfurter, ExchangeRate.host, Fawaz API & ExchangeRate-API</p>
+                <p><strong>Update Frequency:</strong> Hourly updates (some real-time)</p>
+                <p><strong>API Keys:</strong> Not required - completely free!</p>
+                <p><strong>Rate Limits:</strong> Generous limits with smart caching</p>
+                <p><strong>Coverage:</strong> <span id="currency-count">200+</span> currencies worldwide</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="supported-currencies">200+</div>
+                    <div class="stat-label">Currencies Supported</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="last-update">-</div>
+                    <div class="stat-label">Last Update</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="api-status">Online</div>
+                    <div class="stat-label">API Status</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">Free</div>
+                    <div class="stat-label">API Keys Required</div>
+                </div>
             </div>
             <p style="font-size: 0.9em; color: #7f8c8d; margin-top: 1rem;">
-                This tool is designed for research and non-commercial use. The OpenSky Network is a 
-                community-driven project providing free access to real-world air traffic control data.
-                <br><br>
-                <strong>Features:</strong>
-                • Live aircraft positions and tracking<br>
-                • Airport arrival/departure boards<br>
-                • Location-based overhead traffic detection<br>
-                • Flight search by callsign or ICAO address<br>
-                • Real-time statistics and analytics
+                <strong>Multiple Free Data Sources:</strong><br>
+                • <strong>Frankfurter:</strong> Open-source, ECB data, no limits<br>
+                • <strong>ExchangeRate.host:</strong> Real-time rates, 170+ currencies<br>
+                • <strong>Fawaz Currency API:</strong> 200+ currencies, no rate limits<br>
+                • <strong>ExchangeRate-API:</strong> Backup source, reliable data<br><br>
+                
+                <strong>Advanced Features:</strong><br>
+                • Auto-discovery of all available currencies<br>
+                • Smart fallback between multiple APIs<br>
+                • Intelligent caching for performance<br>
+                • Real-time currency conversion<br>
+                • Historical rate analysis & trends<br>
+                • Travel budget planning tools<br>
+                • Country-specific tipping guides<br>
+                • Multi-currency comparison<br>
+                • Cash vs card cost analysis<br>
+                • Mobile-responsive design
             </p>
         </div>
     </div>
     
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Global variables
-        let map;
-        let aircraftMarkers = [];
-        let userLocation = null;
+        let currentRates = {};
+        let allCurrencies = {};
+        let popularCurrencies = <?php echo json_encode($popular_currencies); ?>;
+        let tippingGuide = <?php echo json_encode($tipping_guide); ?>;
         
-        // Initialize the map
-        function initMap() {
-            map = L.map('map').setView([40.7128, -74.0060], 6); // Default to New York area
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllCurrencies();
+            loadPopularRates('USD');
+            updateLastUpdate();
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Load initial aircraft data
-            loadAircraftData();
-            
-            // Set up auto-refresh every 15 seconds (respect rate limits)
-            setInterval(loadAircraftData, 15000);
+            // Add event listeners for real-time conversion
+            document.getElementById('amount').addEventListener('input', debounce(convertCurrency, 500));
+        });
+        
+        // Debounce function to limit API calls
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
         
-        // Load aircraft data from API
-        async function loadAircraftData(bbox = null) {
+        // Convert currency
+        async function convertCurrency() {
+            const from = document.getElementById('from-currency').value;
+            const to = document.getElementById('to-currency').value;
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const resultDiv = document.getElementById('conversion-result');
+            
+            if (amount <= 0) {
+                resultDiv.innerHTML = '';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="loading">Converting...</div>';
+            
             try {
-                const url = bbox ? 
-                    `?action=states&bbox=${bbox.join(',')}` : 
-                    '?action=states';
-                
-                const response = await fetch(url);
+                const response = await fetch(`?action=convert&from=${from}&to=${to}&amount=${amount}`);
                 const data = await response.json();
                 
-                if (data && data.states) {
-                    updateAircraftOnMap(data.states);
-                    updateStatistics(data.states);
+                if (data && data.success !== false && data.result) {
+                    const rate = data.info ? data.info.rate : (data.result / amount);
+                    resultDiv.innerHTML = `
+                        <div class="conversion-result">
+                            <div class="conversion-amount">
+                                ${formatCurrency(data.result, to)}
+                            </div>
+                            <div class="conversion-details">
+                                ${amount} ${from} = ${data.result.toFixed(2)} ${to}<br>
+                                Rate: 1 ${from} = ${rate.toFixed(4)} ${to}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Fallback: calculate from current rates
+                    await loadCurrentRate(from, to, amount);
                 }
             } catch (error) {
-                console.error('Error loading aircraft data:', error);
+                resultDiv.innerHTML = '<div class="error">Error converting currency. Please try again.</div>';
+                console.error('Conversion error:', error);
             }
         }
         
-        // Update aircraft markers on map
-        function updateAircraftOnMap(states) {
-            // Clear existing markers
-            aircraftMarkers.forEach(marker => map.removeLayer(marker));
-            aircraftMarkers = [];
-            
-            states.forEach(state => {
-                const [icao24, callsign, origin_country, time_position, last_contact, 
-                       longitude, latitude, baro_altitude, on_ground, velocity, 
-                       true_track, vertical_rate] = state;
+        // Fallback conversion calculation
+        async function loadCurrentRate(from, to, amount) {
+            try {
+                const response = await fetch(`?action=latest_rates&base=${from}&symbols=${to}`);
+                const data = await response.json();
+                const resultDiv = document.getElementById('conversion-result');
                 
-                if (latitude && longitude) {
-                    const marker = L.circleMarker([latitude, longitude], {
-                        radius: on_ground ? 4 : 6,
-                        fillColor: on_ground ? '#e74c3c' : '#27ae60',
-                        color: '#ffffff',
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    });
+                if (data && data.rates && data.rates[to]) {
+                    const rate = data.rates[to];
+                    const result = amount * rate;
                     
-                    const popupContent = createAircraftPopup(state);
-                    marker.bindPopup(popupContent);
-                    
-                    marker.addTo(map);
-                    aircraftMarkers.push(marker);
+                    resultDiv.innerHTML = `
+                        <div class="conversion-result">
+                            <div class="conversion-amount">
+                                ${formatCurrency(result, to)}
+                            </div>
+                            <div class="conversion-details">
+                                ${amount} ${from} = ${result.toFixed(2)} ${to}<br>
+                                Rate: 1 ${from} = ${rate.toFixed(4)} ${to}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">Unable to get current rates</div>';
                 }
-            });
+            } catch (error) {
+                document.getElementById('conversion-result').innerHTML = 
+                    '<div class="error">Error loading rates</div>';
+            }
         }
         
-        // Create popup content for aircraft
-        function createAircraftPopup(state) {
-            const [icao24, callsign, origin_country, time_position, last_contact, 
-                   longitude, latitude, baro_altitude, on_ground, velocity, 
-                   true_track, vertical_rate] = state;
+        // Load popular rates for a base currency
+        async function loadPopularRates(baseCurrency) {
+            const resultDiv = document.getElementById('popular-rates');
+            resultDiv.innerHTML = '<div class="loading">Loading rates...</div>';
             
-            const altitudeM = baro_altitude || 0;
-            const altitudeFt = Math.round(altitudeM * 3.28084);
-            const speedKmh = velocity ? Math.round(velocity * 3.6) : 0;
-            const speedKts = velocity ? Math.round(velocity * 1.944) : 0;
+            // Update active currency button
+            document.querySelectorAll('.currency-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(baseCurrency)) {
+                    btn.classList.add('active');
+                }
+            });
             
-            return `
-                <div class="popup-content">
-                    <h3>${callsign ? callsign.trim() : 'Unknown'}</h3>
-                    <p><strong>ICAO24:</strong> ${icao24}</p>
-                    <p><strong>Country:</strong> ${origin_country}</p>
-                    <p><strong>Status:</strong> ${on_ground ? '🛬 On Ground' : '✈️ Airborne'}</p>
-                    <p><strong>Altitude:</strong> ${altitudeFt} ft (${Math.round(altitudeM)} m)</p>
-                    <p><strong>Speed:</strong> ${speedKts} kts (${speedKmh} km/h)</p>
-                    ${true_track ? `<p><strong>Heading:</strong> ${Math.round(true_track)}°</p>` : ''}
-                    ${vertical_rate ? `<p><strong>Climb Rate:</strong> ${Math.round(vertical_rate * 196.85)} ft/min</p>` : ''}
+            try {
+                const popularCodes = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY'];
+                const symbols = popularCodes.filter(code => code !== baseCurrency).join(',');
+                
+                const response = await fetch(`?action=latest_rates&base=${baseCurrency}&symbols=${symbols}`);
+                const data = await response.json();
+                
+                if (data && data.rates) {
+                    currentRates = data.rates;
+                    displayPopularRates(data.rates, baseCurrency);
+                } else {
+                    resultDiv.innerHTML = '<div class="error">Unable to load rates</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error loading rates</div>';
+                console.error('Rates error:', error);
+            }
+        }
+        
+        // Display popular rates
+        function displayPopularRates(rates, baseCurrency) {
+            const resultDiv = document.getElementById('popular-rates');
+            let html = '';
+            
+            for (const [currency, rate] of Object.entries(rates)) {
+                const currencyInfo = popularCurrencies[currency];
+                if (currencyInfo) {
+                    html += `
+                        <div class="currency-item">
+                            <div class="currency-info">
+                                <div class="currency-code">
+                                    ${currencyInfo.flag} ${currency}
+                                </div>
+                                <div class="currency-name">${currencyInfo.name}</div>
+                            </div>
+                            <div class="currency-rate">
+                                ${rate.toFixed(4)}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        // Set base currency for popular rates
+        function setBaseCurrency(currency) {
+            loadPopularRates(currency);
+        }
+        
+        // Calculate travel budget
+        async function calculateBudget() {
+            const budgetAmount = parseFloat(document.getElementById('budget-amount').value) || 0;
+            const budgetCurrency = document.getElementById('budget-currency').value;
+            const destinationCurrency = document.getElementById('destination-currency').value;
+            const tripDays = parseInt(document.getElementById('trip-days').value) || 1;
+            const resultDiv = document.getElementById('budget-result');
+            
+            if (budgetAmount <= 0) {
+                resultDiv.innerHTML = '<div class="error">Please enter a valid budget amount</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="loading">Calculating budget...</div>';
+            
+            try {
+                const response = await fetch(`?action=convert&from=${budgetCurrency}&to=${destinationCurrency}&amount=${budgetAmount}`);
+                const data = await response.json();
+                
+                if (data && data.result) {
+                    const totalBudget = data.result;
+                    const dailyBudget = totalBudget / tripDays;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="budget-breakdown">
+                            <h4>Budget Breakdown</h4>
+                            <div class="budget-item">
+                                <span>Total Budget:</span>
+                                <span>${formatCurrency(totalBudget, destinationCurrency)}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span>Daily Budget:</span>
+                                <span>${formatCurrency(dailyBudget, destinationCurrency)}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span>Accommodation (40%):</span>
+                                <span>${formatCurrency(dailyBudget * 0.4, destinationCurrency)}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span>Food & Dining (30%):</span>
+                                <span>${formatCurrency(dailyBudget * 0.3, destinationCurrency)}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span>Activities (20%):</span>
+                                <span>${formatCurrency(dailyBudget * 0.2, destinationCurrency)}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span>Miscellaneous (10%):</span>
+                                <span>${formatCurrency(dailyBudget * 0.1, destinationCurrency)}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">Unable to calculate budget</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error calculating budget</div>';
+                console.error('Budget error:', error);
+            }
+        }
+        
+        // Calculate tip
+        function calculateTip() {
+            const billAmount = parseFloat(document.getElementById('bill-amount').value) || 0;
+            const currency = document.getElementById('tip-currency').value;
+            const country = document.getElementById('tip-country').value;
+            const resultDiv = document.getElementById('tip-result');
+            
+            if (billAmount <= 0) {
+                resultDiv.innerHTML = '<div class="error">Please enter a valid bill amount</div>';
+                return;
+            }
+            
+            const tipInfo = tippingGuide[country];
+            if (!tipInfo) {
+                resultDiv.innerHTML = '<div class="error">Tipping information not available for this country</div>';
+                return;
+            }
+            
+            const tipPercentage = tipInfo.percent;
+            const tipAmount = billAmount * (tipPercentage / 100);
+            const totalAmount = billAmount + tipAmount;
+            
+            resultDiv.innerHTML = `
+                <div class="tip-result">
+                    <h4>Tipping Calculation</h4>
+                    <p><strong>Recommended Tip:</strong> ${formatCurrency(tipAmount, currency)} (${tipPercentage}%)</p>
+                    <p><strong>Total Amount:</strong> ${formatCurrency(totalAmount, currency)}</p>
+                    <p style="margin-top: 1rem; font-size: 0.9em;">${tipInfo.description}</p>
                 </div>
             `;
         }
         
-        // Update statistics
-        function updateStatistics(states) {
-            const total = states.length;
-            const countries = new Set(states.map(s => s[2])).size;
-            const airborne = states.filter(s => !s[8]).length;
-            const ground = states.filter(s => s[8]).length;
+        // Load trends
+        async function loadTrends() {
+            const base = document.getElementById('trend-base').value;
+            const target = document.getElementById('trend-target').value;
+            const resultDiv = document.getElementById('trends-result');
             
-            document.getElementById('total-aircraft').textContent = total;
-            document.getElementById('countries').textContent = countries;
-            document.getElementById('airborne').textContent = airborne;
-            document.getElementById('ground').textContent = ground;
-        }
-        
-        // Search for specific flight
-        async function searchFlight() {
-            const query = document.getElementById('search-input').value.trim();
-            const resultsDiv = document.getElementById('flight-results');
-            
-            if (!query) {
-                resultsDiv.innerHTML = '<div class="error">Please enter a callsign or ICAO24 address</div>';
-                return;
-            }
-            
-            resultsDiv.innerHTML = '<div class="loading">Searching flights...</div>';
+            resultDiv.innerHTML = '<div class="loading">Loading trend data...</div>';
             
             try {
-                // Try to get current state first
-                const statesResponse = await fetch('?action=states');
-                const statesData = await statesResponse.json();
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - 7);
                 
-                if (statesData && statesData.states) {
-                    const matchingAircraft = statesData.states.filter(state => {
-                        const callsign = state[1] ? state[1].trim().toLowerCase() : '';
-                        const icao24 = state[0].toLowerCase();
-                        const searchLower = query.toLowerCase();
-                        
-                        return callsign.includes(searchLower) || icao24.includes(searchLower);
-                    });
-                    
-                    if (matchingAircraft.length > 0) {
-                        displayFlightResults(matchingAircraft, resultsDiv, 'current');
-                    } else {
-                        // Try historical search for ICAO24
-                        if (query.match(/^[a-fA-F0-9]{6}$/)) {
-                            const historicalResponse = await fetch(`?action=flights_aircraft&icao24=${query}`);
-                            const historicalData = await historicalResponse.json();
-                            
-                            if (historicalData && historicalData.length > 0) {
-                                displayHistoricalFlights(historicalData, resultsDiv);
-                            } else {
-                                resultsDiv.innerHTML = '<div class="error">No flights found for this search</div>';
-                            }
-                        } else {
-                            resultsDiv.innerHTML = '<div class="error">No current flights found. Try an ICAO24 address for historical search.</div>';
-                        }
+                const response = await fetch(
+                    `?action=timeseries&base=${base}&symbols=${target}` +
+                    `&start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}`
+                );
+                const data = await response.json();
+                
+                if (data && data.rates) {
+                    displayTrends(data.rates, base, target);
+                } else {
+                    resultDiv.innerHTML = '<div class="error">Unable to load trend data</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error loading trends</div>';
+                console.error('Trends error:', error);
+            }
+        }
+        
+        // Display trends
+        function displayTrends(rates, base, target) {
+            const resultDiv = document.getElementById('trends-result');
+            let html = '<div class="chart-container"><h4>7-Day Rate History</h4>';
+            
+            const sortedDates = Object.keys(rates).sort();
+            let previousRate = null;
+            
+            sortedDates.forEach(date => {
+                const rate = rates[date][target];
+                let changeClass = 'rate-same';
+                let changeIcon = '→';
+                
+                if (previousRate !== null) {
+                    if (rate > previousRate) {
+                        changeClass = 'rate-up';
+                        changeIcon = '↗';
+                    } else if (rate < previousRate) {
+                        changeClass = 'rate-down';
+                        changeIcon = '↘';
                     }
                 }
-            } catch (error) {
-                resultsDiv.innerHTML = '<div class="error">Error searching flights. Please try again.</div>';
-                console.error('Search error:', error);
-            }
-        }
-        
-        // Display flight results
-        function displayFlightResults(aircraft, container, type = 'current') {
-            if (aircraft.length === 0) {
-                container.innerHTML = '<div class="error">No flights found</div>';
-                return;
-            }
-            
-            let html = '';
-            aircraft.forEach(state => {
-                const [icao24, callsign, origin_country, time_position, last_contact, 
-                       longitude, latitude, baro_altitude, on_ground, velocity] = state;
-                
-                const altitudeFt = baro_altitude ? Math.round(baro_altitude * 3.28084) : 0;
-                const speedKts = velocity ? Math.round(velocity * 1.944) : 0;
                 
                 html += `
-                    <div class="flight-item">
-                        <div class="flight-callsign">
-                            <span class="status-indicator ${on_ground ? 'status-ground' : 'status-airborne'}"></span>
-                            ${callsign ? callsign.trim() : 'Unknown Callsign'}
-                        </div>
-                        <div class="flight-details">
-                            ICAO24: ${icao24} • Country: ${origin_country}<br>
-                            ${latitude && longitude ? `Position: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}` : 'Position: Unknown'}<br>
-                            Altitude: ${altitudeFt} ft • Speed: ${speedKts} kts
-                            ${type === 'current' ? '' : '<br>Historical Flight'}
+                    <div class="trend-item">
+                        <div class="trend-date">${formatDateDisplay(date)}</div>
+                        <div class="trend-rate ${changeClass}">
+                            ${changeIcon} ${rate.toFixed(4)} ${target}
                         </div>
                     </div>
                 `;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        // Display historical flights
-        function displayHistoricalFlights(flights, container) {
-            if (flights.length === 0) {
-                container.innerHTML = '<div class="error">No historical flights found</div>';
-                return;
-            }
-            
-            let html = '';
-            flights.forEach(flight => {
-                const departureTime = new Date(flight.firstSeen * 1000);
-                const arrivalTime = new Date(flight.lastSeen * 1000);
                 
-                html += `
-                    <div class="flight-item">
-                        <div class="flight-callsign">
-                            ${flight.callsign ? flight.callsign.trim() : 'Unknown Callsign'}
-                        </div>
-                        <div class="flight-details">
-                            ICAO24: ${flight.icao24}<br>
-                            Departure: ${flight.estDepartureAirport || 'Unknown'} • ${departureTime.toLocaleString()}<br>
-                            Arrival: ${flight.estArrivalAirport || 'Unknown'} • ${arrivalTime.toLocaleString()}
-                        </div>
-                    </div>
-                `;
+                previousRate = rate;
             });
             
-            container.innerHTML = html;
+            // Calculate trend summary
+            const firstRate = rates[sortedDates[0]][target];
+            const lastRate = rates[sortedDates[sortedDates.length - 1]][target];
+            const change = ((lastRate - firstRate) / firstRate * 100);
+            const changeClass = change > 0 ? 'rate-up' : (change < 0 ? 'rate-down' : 'rate-same');
+            
+            html += `
+                <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <strong>7-Day Summary:</strong><br>
+                    <span class="${changeClass}">
+                        ${change > 0 ? '+' : ''}${change.toFixed(2)}% change
+                        (${firstRate.toFixed(4)} → ${lastRate.toFixed(4)})
+                    </span>
+                </div>
+            `;
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
         }
         
-        // Get airport arrivals
-        async function getAirportArrivals() {
-            const airport = document.getElementById('airport-input').value.trim().toUpperCase();
-            const resultsDiv = document.getElementById('airport-results');
+        // Compare multiple currencies
+        async function compareMultiple() {
+            const base = document.getElementById('comparison-base').value;
+            const amount = parseFloat(document.getElementById('comparison-amount').value) || 1;
+            const resultDiv = document.getElementById('comparison-result');
             
-            if (!airport) {
-                resultsDiv.innerHTML = '<div class="error">Please enter an airport ICAO code</div>';
-                return;
-            }
-            
-            resultsDiv.innerHTML = '<div class="loading">Loading arrivals...</div>';
+            resultDiv.innerHTML = '<div class="loading">Loading comparison...</div>';
             
             try {
-                const response = await fetch(`?action=airport_arrivals&airport=${airport}`);
+                const currencies = ['EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'SEK'];
+                const symbols = currencies.filter(c => c !== base).join(',');
+                
+                const response = await fetch(`?action=latest_rates&base=${base}&symbols=${symbols}`);
                 const data = await response.json();
                 
-                if (data && data.length > 0) {
-                    displayAirportFlights(data, resultsDiv, 'arrivals');
+                if (data && data.rates) {
+                    displayComparison(data.rates, base, amount);
                 } else {
-                    resultsDiv.innerHTML = '<div class="error">No recent arrivals found for this airport</div>';
+                    resultDiv.innerHTML = '<div class="error">Unable to load comparison data</div>';
                 }
             } catch (error) {
-                resultsDiv.innerHTML = '<div class="error">Error loading arrivals. Please check the airport code.</div>';
+                resultDiv.innerHTML = '<div class="error">Error loading comparison</div>';
+                console.error('Comparison error:', error);
             }
         }
         
-        // Get airport departures
-        async function getAirportDepartures() {
-            const airport = document.getElementById('airport-input').value.trim().toUpperCase();
-            const resultsDiv = document.getElementById('airport-results');
+        // Display comparison
+        function displayComparison(rates, base, amount) {
+            const resultDiv = document.getElementById('comparison-result');
+            let html = `<h4>${amount} ${base} converts to:</h4>`;
             
-            if (!airport) {
-                resultsDiv.innerHTML = '<div class="error">Please enter an airport ICAO code</div>';
-                return;
-            }
+            // Sort by converted amount (descending)
+            const sortedRates = Object.entries(rates).sort((a, b) => b[1] * amount - a[1] * amount);
             
-            resultsDiv.innerHTML = '<div class="loading">Loading departures...</div>';
-            
-            try {
-                const response = await fetch(`?action=airport_departures&airport=${airport}`);
-                const data = await response.json();
-                
-                if (data && data.length > 0) {
-                    displayAirportFlights(data, resultsDiv, 'departures');
-                } else {
-                    resultsDiv.innerHTML = '<div class="error">No recent departures found for this airport</div>';
-                }
-            } catch (error) {
-                resultsDiv.innerHTML = '<div class="error">Error loading departures. Please check the airport code.</div>';
-            }
-        }
-        
-        // Display airport flights
-        function displayAirportFlights(flights, container, type) {
-            let html = `<h3>${type === 'arrivals' ? 'Recent Arrivals' : 'Recent Departures'}</h3>`;
-            
-            flights.forEach(flight => {
-                const time = type === 'arrivals' ? 
-                    new Date(flight.lastSeen * 1000) : 
-                    new Date(flight.firstSeen * 1000);
+            sortedRates.forEach(([currency, rate]) => {
+                const converted = amount * rate;
+                const currencyInfo = popularCurrencies[currency];
                 
                 html += `
-                    <div class="flight-item">
-                        <div class="flight-callsign">
-                            ${flight.callsign ? flight.callsign.trim() : 'Unknown'}
+                    <div class="currency-item">
+                        <div class="currency-info">
+                            <div class="currency-code">
+                                ${currencyInfo ? currencyInfo.flag + ' ' : ''}${currency}
+                            </div>
+                            <div class="currency-name">
+                                ${currencyInfo ? currencyInfo.name : currency}
+                            </div>
                         </div>
-                        <div class="flight-details">
-                            ICAO24: ${flight.icao24}<br>
-                            ${type === 'arrivals' ? 'From' : 'To'}: ${
-                                type === 'arrivals' ? 
-                                (flight.estDepartureAirport || 'Unknown') : 
-                                (flight.estArrivalAirport || 'Unknown')
-                            }<br>
-                            Time: ${time.toLocaleString()}
+                        <div class="currency-rate">
+                            ${formatCurrency(converted, currency)}
                         </div>
                     </div>
                 `;
             });
             
-            container.innerHTML = html;
+            resultDiv.innerHTML = html;
         }
         
-        // Detect user location and show overhead traffic
-        function detectLocation() {
-            const coordsDiv = document.getElementById('location-coords');
-            const resultsDiv = document.getElementById('overhead-results');
+        // Compare cash vs card
+        function compareCashCard() {
+            const amount = parseFloat(document.getElementById('transaction-amount').value) || 0;
+            const cardFee = parseFloat(document.getElementById('card-fee').value) || 0;
+            const atmFee = parseFloat(document.getElementById('atm-fee').value) || 0;
+            const resultDiv = document.getElementById('cash-card-result');
             
-            if (!navigator.geolocation) {
-                resultsDiv.innerHTML = '<div class="error">Geolocation is not supported by this browser</div>';
+            if (amount <= 0) {
+                resultDiv.innerHTML = '<div class="error">Please enter a valid transaction amount</div>';
                 return;
             }
             
-            resultsDiv.innerHTML = '<div class="loading">Getting your location...</div>';
+            const cardCost = amount * (1 + cardFee / 100);
+            const cashCost = amount + atmFee;
+            const difference = Math.abs(cardCost - cashCost);
+            const cheaper = cardCost < cashCost ? 'Card' : 'Cash';
+            const savings = difference;
             
-            navigator.geolocation.getCurrentPosition(
-                position => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    userLocation = {lat, lon};
-                    
-                    coordsDiv.style.display = 'block';
-                    coordsDiv.innerHTML = `📍 Your location: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-                    
-                    // Update map center
-                    map.setView([lat, lon], 9);
-                    
-                    // Add user location marker
-                    L.marker([lat, lon], {
-                        icon: L.divIcon({
-                            html: '📍',
-                            className: 'user-location-marker',
-                            iconSize: [20, 20]
-                        })
-                    }).bindPopup('Your Location').addTo(map);
-                    
-                    // Load aircraft in the area
-                    const bbox = [
-                        lat - 0.5, lon - 0.5, // min lat, min lon
-                        lat + 0.5, lon + 0.5  // max lat, max lon
-                    ];
-                    
-                    loadAircraftData(bbox);
-                    findOverheadTraffic(lat, lon);
-                },
-                error => {
-                    resultsDiv.innerHTML = '<div class="error">Unable to get your location. Please enable location services.</div>';
-                }
-            );
-        }
-        
-        // Find overhead traffic near user location
-        async function findOverheadTraffic(lat, lon) {
-            const resultsDiv = document.getElementById('overhead-results');
-            resultsDiv.innerHTML = '<div class="loading">Finding overhead traffic...</div>';
-            
-            try {
-                const bbox = [lat - 0.2, lon - 0.2, lat + 0.2, lon + 0.2];
-                const response = await fetch(`?action=states&bbox=${bbox.join(',')}`);
-                const data = await response.json();
-                
-                if (data && data.states && data.states.length > 0) {
-                    // Calculate distances and sort by proximity
-                    const aircraftWithDistance = data.states
-                        .filter(state => state[5] && state[6]) // Has valid coordinates
-                        .map(state => {
-                            const distance = calculateDistance(lat, lon, state[6], state[5]);
-                            return {...state, distance};
-                        })
-                        .sort((a, b) => a.distance - b.distance)
-                        .slice(0, 10); // Show only closest 10 aircraft
-                    
-                    displayOverheadTraffic(aircraftWithDistance, resultsDiv);
-                } else {
-                    resultsDiv.innerHTML = '<div class="error">No aircraft found in your immediate area</div>';
-                }
-            } catch (error) {
-                resultsDiv.innerHTML = '<div class="error">Error finding overhead traffic</div>';
-            }
-        }
-        
-        // Display overhead traffic
-        function displayOverheadTraffic(aircraft, container) {
-            let html = '<h3>Nearby Aircraft</h3>';
-            
-            aircraft.forEach(data => {
-                const state = Array.isArray(data) ? data : [
-                    data[0], data[1], data[2], data[3], data[4], data[5], data[6], 
-                    data[7], data[8], data[9], data[10], data[11]
-                ];
-                const distance = data.distance;
-                
-                const [icao24, callsign, origin_country, , , longitude, latitude, 
-                       baro_altitude, on_ground, velocity] = state;
-                
-                const altitudeFt = baro_altitude ? Math.round(baro_altitude * 3.28084) : 0;
-                const speedKts = velocity ? Math.round(velocity * 1.944) : 0;
-                
-                html += `
-                    <div class="flight-item">
-                        <div class="flight-callsign">
-                            <span class="status-indicator ${on_ground ? 'status-ground' : 'status-airborne'}"></span>
-                            ${callsign ? callsign.trim() : 'Unknown'}
-                        </div>
-                        <div class="flight-details">
-                            Distance: ${distance.toFixed(1)} km • Country: ${origin_country}<br>
-                            Altitude: ${altitudeFt} ft • Speed: ${speedKts} kts<br>
-                            ICAO24: ${icao24}
-                        </div>
+            resultDiv.innerHTML = `
+                <div class="budget-breakdown">
+                    <h4>Cost Comparison</h4>
+                    <div class="budget-item">
+                        <span>💳 Card Payment:</span>
+                        <span>$${cardCost.toFixed(2)}</span>
                     </div>
-                `;
-            });
+                    <div class="budget-item">
+                        <span>💰 Cash (ATM):</span>
+                        <span>$${cashCost.toFixed(2)}</span>
+                    </div>
+                    <div class="budget-item" style="color: #27ae60;">
+                        <span><strong>Recommended:</strong></span>
+                        <span><strong>${cheaper}</strong></span>
+                    </div>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; color: #27ae60;">
+                        <strong>You save $${savings.toFixed(2)} by using ${cheaper.toLowerCase()}</strong>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Utility functions
+        function formatCurrency(amount, currency) {
+            const currencyInfo = popularCurrencies[currency];
+            const symbol = currencyInfo ? currencyInfo.symbol : currency;
             
-            container.innerHTML = html;
-        }
-        
-        // Calculate distance between two coordinates (Haversine formula)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Earth's radius in kilometers
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-        
-        // Update statistics manually
-        async function updateStats() {
-            try {
-                const response = await fetch('?action=states');
-                const data = await response.json();
-                
-                if (data && data.states) {
-                    updateStatistics(data.states);
-                }
-            } catch (error) {
-                console.error('Error updating stats:', error);
+            if (['JPY', 'KRW'].includes(currency)) {
+                return `${symbol}${Math.round(amount).toLocaleString()}`;
             }
+            
+            return `${symbol}${amount.toFixed(2)}`;
         }
         
-        // Initialize everything when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            updateStats();
-            
-            // Add enter key support for search inputs
-            document.getElementById('search-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') searchFlight();
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        function formatDateDisplay(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
             });
-            
-            document.getElementById('airport-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') getAirportArrivals();
-            });
-        });
+        }
+        
+        function updateLastUpdate() {
+            const now = new Date();
+            document.getElementById('last-update').textContent = 
+                now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+        }
+        
+        // Auto-refresh rates every 5 minutes
+        setInterval(() => {
+            const activeBase = document.querySelector('.currency-button.active');
+            if (activeBase) {
+                const currency = activeBase.textContent.trim().split('\n')[1];
+                loadPopularRates(currency);
+            }
+            updateLastUpdate();
+        }, 300000);
     </script>
 </body>
 </html>
